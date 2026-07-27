@@ -1,0 +1,42 @@
+# ---------- Python / Backend ----------
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Modelos entrenados (se distribuyen por Object Storage, no por Git)
+backend/models/*.joblib
+backend/models/*.pkl
+backend/models/*.pickle
+
+# ---------- Node / Frontend ----------
+node_modules/
+dist/
+dist-ssr/
+*.local
+.vite/
+
+# ---------- Entorno ----------
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ---------- Editores / SO ----------
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# ---------- Logs ----------
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

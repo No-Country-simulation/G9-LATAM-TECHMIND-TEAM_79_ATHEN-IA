@@ -1,0 +1,17 @@
+{
+  "name": "athenia-mvp",
+  "version": "0.3.0",
+  "private": true,
+  "description": "AthenIA - Organizacion Inteligente del Conocimiento Tecnico. MVP Hackathon ONE Alura + Oracle / No Country.",
+  "scripts": {
+    "dev": "concurrently --names \"BACKEND,FRONTEND\" --prefix-colors \"magenta.bold,cyan.bold\" --kill-others \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "dev:backend": "node scripts/dev-backend.mjs",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "test": "node scripts/run-tests.mjs",
+    "build": "npm --prefix frontend run build",
+    "install:all": "npm install && npm --prefix frontend install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
