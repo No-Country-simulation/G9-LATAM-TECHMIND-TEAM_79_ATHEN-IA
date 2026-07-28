@@ -1,0 +1,204 @@
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { Search, X, SearchX, AlertCircle } from 'lucide-react'
+import CourseCard from '../components/CourseCard'
+import CategoryBadge from '../components/CategoryBadge'
+import { SkeletonGrid, Spinner } from '../components/Loaders'
+import { useContenidos } from '../hooks/useContenidos'
+import { COLORES_CATEGORIA } from '../data/categorias'
+
+const FILTRO_TODOS = 'Todos'
+const CATEGORIAS = [FILTRO_TODOS, ...Object.keys(COLORES_CATEGORIA)]
+
+/**
+ * Vista "Buscar Contenidos".
+ *
+ * Filtra en tiempo real el historial real del backend (`GET /contenidos`):
+ * cada tecla dispara una consulta con debounce, y el filtro por categoria se
+ * aplica del lado del servidor. El termino vive en la query string (`?q=`)
+ * para que el buscador del Header pueda navegar hasta aqui y los resultados
+ * sean compartibles por URL.
+ */
+export default function BuscarContenidos() {
+  const [parametros, setParametros] = useSearchParams()
+  const consultaUrl = parametros.get('q') ?? ''
+
+  const [consulta, setConsulta] = useState(consultaUrl)
+  const [categoriaActiva, setCategoriaActiva] = useState(FILTRO_TODOS)
+
+  // Mantiene el input sincronizado cuando la URL cambia desde el Header.
+  useEffect(() => setConsulta(consultaUrl), [consultaUrl])
+
+  // Refleja el termino en la URL sin apilar entradas en el historial.
+  useEffect(() => {
+    const termino = consulta.trim()
+    if (termino === consultaUrl) return
+
+    const temporizador = setTimeout(
+      () => setParametros(termino ? { q: termino } : {}, { replace: true }),
+      300,
+    )
+    return () => clearTimeout(temporizador)
+  }, [consulta, consultaUrl, setParametros])
+
+  const filtros = useMemo(
+    () => ({
+      buscar: consulta.trim(),
+      categoria: categoriaActiva === FILTRO_TODOS ? '' : categoriaActiva,
+    }),
+    [consulta, categoriaActiva],
+  )
+
+  const { items, total, cargando, error } = useContenidos(filtros)
+
+  const limpiarBusqueda = () => setConsulta('')
+
+  const hayFiltros = Boolean(filtros.buscar) || categoriaActiva !== FILTRO_TODOS
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-mist-100">Buscar Contenidos</h1>
+        <p className="mt-1 text-sm text-mist-500">
+          Encuentra cursos, temas y tecnologias en tu biblioteca analizada.
+        </p>
+      </div>
+
+      {/* --- Buscador en tiempo real --- */}
+      <div className="relative">
+        <Search
+          size={17}
+          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-mist-500"
+        />
+        <input
+          type="text"
+          value={consulta}
+          onChange={(e) => setConsulta(e.target.value)}
+          placeholder="Ej: docker, spring boot, python..."
+          aria-label="Buscar contenidos"
+          className="input-base px-11"
+        />
+
+        <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2">
+          {cargando && <Spinner tamano={15} />}
+          {consulta && (
+            <button
+              type="button"
+              onClick={limpiarBusqueda}
+              className="rounded-md p-0.5 text-mist-500 hover:text-mist-100"
+              aria-label="Limpiar busqueda"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* --- Filtros por categoria --- */}
+      <div className="flex flex-wrap gap-2">
+        {CATEGORIAS.map((categoria) => {
+          const activa = categoria === categoriaActiva
+
+          if (categoria === FILTRO_TODOS) {
+            return (
+              <button
+                key={categoria}
+                type="button"
+                onClick={() => setCategoriaActiva(categoria)}
+                aria-pressed={activa}
+                className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                  activa
+                    ? 'bg-brand-600 text-white'
+                    : 'border border-ink-700 text-mist-300 hover:border-brand-500 hover:text-mist-100'
+                }`}
+              >
+                Todos
+              </button>
+            )
+          }
+
+          return (
+            <button
+              key={categoria}
+              type="button"
+              onClick={() => setCategoriaActiva(activa ? FILTRO_TODOS : categoria)}
+              aria-pressed={activa}
+              className={`rounded-lg transition-opacity ${
+                activa ? 'ring-2 ring-brand-400' : 'opacity-70 hover:opacity-100'
+              }`}
+            >
+              <CategoryBadge categoria={categoria} />
+            </button>
+          )
+        })}
+      </div>
+
+      {/* --- Estado de la consulta --- */}
+      <p className="text-sm text-mist-500">
+        {cargando ? (
+          'Buscando...'
+        ) : (
+          <>
+            {total} resultado{total === 1 ? '' : 's'}
+            {hayFiltros && (
+              <>
+                {filtros.buscar && (
+                  <>
+                    {' '}
+                    para <span className="text-mist-100">"{filtros.buscar}"</span>
+                  </>
+                )}
+                {categoriaActiva !== FILTRO_TODOS && (
+                  <>
+                    {' '}
+                    en <span className="text-mist-100">{categoriaActiva}</span>
+                  </>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </p>
+
+      {/* --- Error de conexion --- */}
+      {error && (
+        <div
+          role="alert"
+          className="flex items-start gap-2.5 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3.5"
+        >
+          <AlertCircle size={17} className="mt-0.5 shrink-0 text-rose-400" />
+          <p className="text-sm text-rose-200">{error}</p>
+        </div>
+      )}
+
+      {/* --- Resultados --- */}
+      {cargando && items.length === 0 ? (
+        <SkeletonGrid cantidad={6} />
+      ) : items.length > 0 ? (
+        <div
+          className={`grid gap-4 transition-opacity md:grid-cols-2 xl:grid-cols-3 ${
+            cargando ? 'opacity-60' : 'opacity-100'
+          }`}
+        >
+          {items.map((contenido) => (
+            <CourseCard key={contenido.id} contenido={contenido} />
+          ))}
+        </div>
+      ) : (
+        !error && (
+          <div className="card flex flex-col items-center justify-center p-12 text-center">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-ink-800 text-mist-500">
+              <SearchX size={26} />
+            </span>
+            <p className="mt-4 text-sm font-medium text-mist-300">Sin resultados</p>
+            <p className="mt-1 max-w-sm text-sm text-mist-500">
+              {hayFiltros
+                ? 'No encontramos contenido que coincida. Prueba con otro termino o quita el filtro de categoria.'
+                : 'Aun no has analizado contenido. Ve a "Agregar Curso" para empezar.'}
+            </p>
+          </div>
+        )
+      )}
+    </div>
+  )
+}

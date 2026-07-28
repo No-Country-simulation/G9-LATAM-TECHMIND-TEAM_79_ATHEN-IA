@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+/* =========================================================================
+   Branding AthenIA - paleta oscura / morada
+   Tailwind v4 genera utilidades a partir de estos tokens:
+   --color-brand-500  ->  bg-brand-500 / text-brand-500 / border-brand-500
+   ========================================================================= */
+@theme {
+  /* Superficies */
+  --color-ink-950: #08060f;
+  --color-ink-900: #0d0a17;
+  --color-ink-850: #131022;
+  --color-ink-800: #1a1530;
+  --color-ink-700: #241d40;
+  --color-ink-600: #322858;
+
+  /* Morado AthenIA */
+  --color-brand-300: #c4b5fd;
+  --color-brand-400: #a78bfa;
+  --color-brand-500: #8b5cf6;
+  --color-brand-600: #7c3aed;
+  --color-brand-700: #6d28d9;
+
+  /* Texto */
+  --color-mist-100: #f1eefb;
+  --color-mist-300: #c9c2e3;
+  --color-mist-500: #8f86ad;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-ink-950 text-mist-100 font-sans antialiased;
+  }
+
+  /* Scrollbar acorde al tema oscuro */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-ink-900;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-ink-700 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-ink-600;
+  }
+
+  /* Foco visible y consistente para accesibilidad (QA lo valida) */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-400;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-ink-850 border border-ink-700 rounded-2xl;
+  }
+
+  .input-base {
+    @apply w-full bg-ink-900 border border-ink-700 rounded-xl px-4 py-2.5
+           text-sm text-mist-100 placeholder:text-mist-500
+           transition-colors focus:border-brand-500 focus:outline-none;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl
+           bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white
+           transition-colors hover:bg-brand-500
+           disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl
+           border border-ink-700 bg-transparent px-5 py-2.5 text-sm
+           font-semibold text-mist-300 transition-colors
+           hover:border-brand-500 hover:text-mist-100;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-lg bg-ink-800 px-2.5 py-1
+           text-xs font-medium text-brand-300 border border-ink-700;
+  }
+}
+
+/* Animacion de entrada para el resultado del analisis */
+@keyframes athenia-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: athenia-fade-up 0.35s ease-out both;
+}

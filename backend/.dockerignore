@@ -1,0 +1,21 @@
+# Reduce el contexto de build: solo `app/`, `models/` y requirements.txt
+# terminan en la imagen.
+tests/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+*.md
+.env
+.env.*
+Dockerfile
+.dockerignore
+
+# Los modelos entrenados se montan como volumen o se descargan de OCI Object
+# Storage; no deben quedar horneados en la imagen.
+models/*.joblib
+models/*.pkl
+models/*.pickle
