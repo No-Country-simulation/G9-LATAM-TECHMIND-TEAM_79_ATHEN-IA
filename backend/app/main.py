@@ -62,9 +62,10 @@ async def lifespan(app: FastAPI):
     """Arranque: reporta el clasificador activo y precarga el historial demo."""
     logger.info("Iniciando %s v%s (%s)", settings.APP_NAME, settings.VERSION, settings.ENV)
     logger.info(
-        "Clasificador: %s (mock=%s)",
+        "Motor de clasificacion: %s | artefacto: %s | detalle: %s",
+        services.clasificador.motor,
         services.clasificador.nombre,
-        services.clasificador.es_mock,
+        services.clasificador.detalle,
     )
 
     sembrados = services.sembrar_demo()
@@ -207,6 +208,7 @@ def root() -> dict:
         "nombre": settings.APP_NAME,
         "version": settings.VERSION,
         "entorno": settings.ENV,
+        "motor": services.clasificador.motor,
         "modelo": services.clasificador.nombre,
         "docs": "/docs",
         "endpoints": [
@@ -230,15 +232,21 @@ def salud() -> SaludOutput:
     """
     Verificacion de uptime usada por QA y por el monitoreo de OCI.
 
-    Responde 200 mientras el proceso este vivo e informa si el clasificador
-    activo es el modelo entrenado o el fallback por reglas.
+    Responde 200 mientras el proceso este vivo e informa que motor de
+    clasificacion esta en uso:
+
+    - `motor: "modelo_ml_real"`      -> artefacto entrenado cargado y verificado
+    - `motor: "clasificador_reglas"` -> fallback por taxonomia de palabras clave
     """
+    motor = services.clasificador
     return SaludOutput(
         estado="ok",
         version=settings.VERSION,
         entorno=settings.ENV,
-        modelo_cargado=services.clasificador.nombre,
-        es_mock=services.clasificador.es_mock,
+        motor=motor.motor,
+        modelo_cargado=motor.nombre,
+        detalle_modelo=motor.detalle,
+        es_mock=motor.es_mock,
         contenidos_en_historial=services.repositorio.total(),
     )
 

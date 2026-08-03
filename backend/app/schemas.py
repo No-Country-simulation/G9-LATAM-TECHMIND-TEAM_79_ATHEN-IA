@@ -17,7 +17,7 @@ frontend los usa para enriquecer la vista, y omitirlos no rompe el contrato.
 """
 
 from datetime import datetime
-from typing import Any, List, Optional, Union
+from typing import Any, List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -223,14 +223,49 @@ class SaludOutput(BaseModel):
     estado: str = Field(..., description="'ok' mientras el proceso responda.")
     version: str = Field(..., description="Version de la API.")
     entorno: str = Field(..., description="development | production.")
-    modelo_cargado: str = Field(..., description="Identificador del clasificador activo.")
+
+    # --- Motor de clasificacion ---------------------------------------------
+    motor: Literal["modelo_ml_real", "clasificador_reglas"] = Field(
+        ...,
+        description=(
+            "Motor de inferencia en uso. `modelo_ml_real` cuando hay un "
+            "artefacto entrenado cargado y verificado; `clasificador_reglas` "
+            "cuando esta activo el fallback."
+        ),
+    )
+    modelo_cargado: str = Field(
+        ...,
+        description="Nombre del artefacto (o de la version de reglas) activo.",
+    )
+    detalle_modelo: str = Field(
+        default="",
+        description="Tipo del estimador cargado. Util para diagnostico de QA.",
+    )
     es_mock: bool = Field(
         ...,
         description="True mientras no se haya cargado el modelo entrenado real.",
     )
+
     contenidos_en_historial: int = Field(
         ...,
         description="Cantidad de analisis almacenados en memoria.",
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "estado": "ok",
+                    "version": "0.4.0",
+                    "entorno": "development",
+                    "motor": "modelo_ml_real",
+                    "modelo_cargado": "clasificador_cursos.pkl",
+                    "detalle_modelo": "Pipeline",
+                    "es_mock": False,
+                    "contenidos_en_historial": 8,
+                }
+            ]
+        }
     )
 
 

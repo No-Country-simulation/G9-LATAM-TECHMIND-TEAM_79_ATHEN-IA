@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { obtenerContenidos, obtenerMetricas } from '../services/api'
+import { obtenerCategorias, obtenerContenidos, obtenerMetricas } from '../services/api'
+import { CATEGORIAS_REGLAS } from '../data/categorias'
 
 /**
  * Historial de analisis con filtros aplicados en el backend.
@@ -56,6 +57,39 @@ export function useContenidos({ categoria, buscar, limite, debounceMs = 250 } = 
   }, [categoria, buscar, limite, debounceMs, recarga])
 
   return { items, total, cargando, error, refrescar, esPrimeraCarga: primeraCarga.current }
+}
+
+/**
+ * Catalogo de categorias del motor activo (`GET /categorias`).
+ *
+ * Es importante que venga del backend y no este cableado en el frontend: las
+ * clases del modelo entrenado (`clasificador_cursos.pkl`) no coinciden con las
+ * de la taxonomia por reglas. Si se cablearan, los filtros mostrarian
+ * categorias que el motor activo nunca devuelve y siempre darian 0 resultados.
+ */
+export function useCategorias() {
+  const [categorias, setCategorias] = useState([])
+  const [cargando, setCargando] = useState(true)
+
+  useEffect(() => {
+    const controlador = new AbortController()
+
+    obtenerCategorias()
+      .then((lista) => {
+        if (!controlador.signal.aborted) setCategorias(lista)
+      })
+      .catch(() => {
+        // Sin backend se muestran las de reglas para que la UI siga navegable.
+        if (!controlador.signal.aborted) setCategorias(CATEGORIAS_REGLAS)
+      })
+      .finally(() => {
+        if (!controlador.signal.aborted) setCargando(false)
+      })
+
+    return () => controlador.abort()
+  }, [])
+
+  return { categorias, cargando }
 }
 
 /**
