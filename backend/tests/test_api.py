@@ -739,6 +739,113 @@ def test_sonda_de_carga_descarta_modelos_inservibles(client, activar_artefacto, 
 
 
 # ===========================================================================
+# CP-106 .. CP-107  |  Arquitectura SOLID (OCP y DIP en vivo)
+# ===========================================================================
+#
+# Estas dos pruebas no verifican una regla de negocio: verifican la
+# ARQUITECTURA misma. Sirven de evidencia reproducible para la auditoria
+# SOLID de la Semana 3 (ver docs/GUIA_TECNICA_Y_PRESENTACION_SEMANA3.md).
+
+
+def test_ocp_nuevo_proveedor_se_integra_sin_tocar_el_registro(client):
+    """
+    CP-106 (OCP): un motor nuevo se suma con una linea de registro, sin
+    editar `RegistroProveedores` ni ningun proveedor existente.
+
+    Simula lo que hara el motor de embeddings/LLM de la Semana 4: una clase
+    que cumple el `Protocol` `Clasificador` y una funcion `cargar()` que la
+    construye. Se registra con prioridad mas alta que el modelo ML para
+    demostrar que el registro respeta el orden sin logica especial por motor.
+    """
+    from app import services
+    from app.domain.protocols import Clasificador
+    from app.ml.registro import RegistroProveedores
+
+    class ClasificadorFalsoSemana4:
+        """Doble minimo que cumple el Protocol `Clasificador` estructuralmente."""
+
+        nombre = "embeddings-demo-semana4"
+        motor = "modelo_ml_real"
+        es_mock = False
+        detalle = "Prueba OCP"
+
+        def clasificar(self, titulo: str, texto: str) -> dict:
+            return {
+                "categoria": "Categoria-Semana-4",
+                "probabilidad": 0.99,
+                "informacion_adicional": [],
+            }
+
+        def categorias(self):
+            return ["Categoria-Semana-4"]
+
+    # Verificacion estructural: el doble cumple el Protocol sin heredar de el.
+    instancia = ClasificadorFalsoSemana4()
+    assert isinstance(instancia, Clasificador)
+
+    # Registro AISLADO: no se toca `app.ml.registro.registro` (el global de
+    # produccion), se instancia una copia limpia para no afectar otras pruebas.
+    registro_de_prueba = RegistroProveedores()
+    registro_de_prueba.registrar("semana-4-embeddings", lambda: instancia, prioridad=1)
+    registro_de_prueba.registrar("modelo-ml", lambda: None, prioridad=10)
+
+    motor_resuelto = registro_de_prueba.resolver()
+
+    assert motor_resuelto is instancia
+    assert motor_resuelto.clasificar("x", "y")["categoria"] == "Categoria-Semana-4"
+
+    # El registro de produccion no se toco: `services.clasificador` sigue igual.
+    assert services.clasificador.nombre != "embeddings-demo-semana4"
+
+
+def test_dip_las_rutas_dependen_del_protocol_no_de_la_implementacion(client, payload_valido):
+    """
+    CP-107 (DIP): `POST /contenido` usa el clasificador inyectado via
+    `Depends(get_clasificador)`, no `services.clasificador` a pelo.
+
+    La prueba sustituye la dependencia con `app.dependency_overrides` —el
+    mecanismo estandar de FastAPI para invertir dependencias en pruebas— y
+    confirma que la ruta responde con el resultado del doble, sin que
+    `services.clasificador` (el global de produccion) haya cambiado.
+    """
+    from app.dependencies import get_clasificador
+    from app.main import app
+
+    class ClasificadorDoble:
+        nombre = "doble-de-prueba"
+        motor = "modelo_ml_real"
+        es_mock = False
+        detalle = "Doble DIP"
+
+        def clasificar(self, titulo: str, texto: str) -> dict:
+            return {
+                "categoria": "Categoria-Inyectada",
+                "probabilidad": 0.42,
+                "informacion_adicional": ["evidencia-dip"],
+            }
+
+        def categorias(self):
+            return ["Categoria-Inyectada"]
+
+    app.dependency_overrides[get_clasificador] = lambda: ClasificadorDoble()
+    try:
+        respuesta = client.post("/contenido", json=payload_valido)
+    finally:
+        # Limpieza obligatoria: si otra prueba corre despues sin esto,
+        # seguiria viendo el doble en vez del motor real.
+        app.dependency_overrides.pop(get_clasificador, None)
+
+    cuerpo = respuesta.json()
+    assert cuerpo["categoria"] == "Categoria-Inyectada"
+    assert cuerpo["probabilidad"] == 0.42
+
+    # La sustitucion fue local a la peticion: el estado global no se toco.
+    from app import services
+
+    assert services.clasificador.nombre != "doble-de-prueba"
+
+
+# ===========================================================================
 # CP-110 .. CP-113  |  Artefacto REAL de Data Science
 # ===========================================================================
 #
