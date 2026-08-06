@@ -19,7 +19,7 @@ pydantic==2.10.5
 # version, actualizar este pin en el mismo commit.
 scikit-learn==1.6.1
 joblib==1.5.3
-numpy==2.5.1
+numpy>=2.0.0
 pandas==3.0.5
 
 # --- Pruebas / QA ------------------------------------------------------------
