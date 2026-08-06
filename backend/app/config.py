@@ -15,7 +15,8 @@ Variables soportadas
 | `ATHENIA_CORS_ORIGINS`   | `*`                           | Origenes permitidos, separados por coma.      |
 | `ATHENIA_HOST`           | `127.0.0.1`                   | Host de uvicorn.                              |
 | `ATHENIA_PORT`           | `8000`                        | Puerto de uvicorn.                            |
-| `ATHENIA_MODELO_PATH`    | `backend/models/classifier.joblib` | Artefacto entrenado por Data Science.    |
+| `ATHENIA_MODELOS_DIR`    | `backend/models`              | Carpeta de artefactos de Data Science.        |
+| `ATHENIA_MODELO_PATH`    | autodeteccion                 | Ruta explicita al `.pkl` / `.joblib`.         |
 | `ATHENIA_SEED_DEMO`      | `true`                        | Precarga contenido de ejemplo al arrancar.    |
 | `ATHENIA_MAX_HISTORIAL`  | `500`                         | Tope de items en el historial en memoria.     |
 | `ATHENIA_DB_URL`         | vacio                         | Reservado: Oracle Autonomous DB (Semana 3).   |
@@ -27,7 +28,7 @@ from __future__ import annotations
 import os
 from functools import lru_cache
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 # Raiz de `backend/` (este archivo vive en backend/app/config.py).
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -54,7 +55,7 @@ class Settings:
 
     # --- Identidad de la API ------------------------------------------------
     APP_NAME: str = "AthenIA API"
-    VERSION: str = "0.3.0"
+    VERSION: str = "0.4.0"
     DESCRIPTION: str = (
         "API de clasificacion inteligente de contenido tecnico. Recibe texto, "
         "lo clasifica por categoria, extrae palabras clave y devuelve metricas "
@@ -77,9 +78,13 @@ class Settings:
         self.CORS_ORIGINS: List[str] = [o.strip() for o in origenes.split(",") if o.strip()]
 
         # --- Modelo de IA ---------------------------------------------------
-        self.MODELO_PATH: Path = Path(
-            os.getenv("ATHENIA_MODELO_PATH", str(BASE_DIR / "models" / "classifier.joblib"))
-        )
+        # Carpeta donde el equipo de Data Science deja el artefacto entrenado.
+        self.MODELOS_DIR: Path = Path(os.getenv("ATHENIA_MODELOS_DIR", str(BASE_DIR / "models")))
+
+        # Ruta explicita al artefacto. Si no se define, `services.localizar_modelo()`
+        # busca en MODELOS_DIR por los nombres conocidos.
+        modelo_env = os.getenv("ATHENIA_MODELO_PATH")
+        self.MODELO_PATH: Optional[Path] = Path(modelo_env) if modelo_env else None
 
         # --- Historial en memoria ------------------------------------------
         self.SEED_DEMO: bool = _bool_env("ATHENIA_SEED_DEMO", True)
@@ -101,9 +106,10 @@ class Settings:
         return True
 
     def __repr__(self) -> str:  # pragma: no cover - solo para debugging
+        modelo = self.MODELO_PATH.name if self.MODELO_PATH else "auto"
         return (
             f"<Settings env={self.ENV} port={self.PORT} "
-            f"cors={self.CORS_ORIGINS} modelo={self.MODELO_PATH.name}>"
+            f"cors={self.CORS_ORIGINS} modelo={modelo}>"
         )
 
 

@@ -7,13 +7,14 @@
 Plataforma que recibe contenido técnico, lo clasifica con Inteligencia Artificial,
 extrae palabras clave y devuelve métricas en formato JSON.
 
-[![Tests](https://img.shields.io/badge/tests-48%20passed-brightgreen)](docs/QA_TESTING_GUIDE.md)
+[![Tests](https://img.shields.io/badge/tests-73%20passed-brightgreen)](docs/QA_TESTING_GUIDE.md)
 [![Backend](https://img.shields.io/badge/backend-FastAPI-009688?logo=fastapi&logoColor=white)](backend/)
 [![Frontend](https://img.shields.io/badge/frontend-React%2019-61DAFB?logo=react&logoColor=black)](frontend/)
 [![Python](https://img.shields.io/badge/python-3.13-3776AB?logo=python&logoColor=white)](backend/requirements.txt)
+[![Scikit-Learn](https://img.shields.io/badge/ML-scikit--learn-F7931E?logo=scikitlearn&logoColor=white)](backend/models/README.md)
 [![Tailwind](https://img.shields.io/badge/styles-Tailwind%20v4-06B6D4?logo=tailwindcss&logoColor=white)](frontend/src/index.css)
 [![Docker](https://img.shields.io/badge/docker-ready-2496ED?logo=docker&logoColor=white)](backend/Dockerfile)
-[![Status](https://img.shields.io/badge/MVP-Semanas%201--2-8b5cf6)]()
+[![Status](https://img.shields.io/badge/MVP-Semana%203-8b5cf6)]()
 
 Hackathon **ONE Alura + Oracle** / **No Country** — Generación 9
 
@@ -280,13 +281,22 @@ curl http://localhost:8000/salud
 ```json
 {
   "estado": "ok",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "entorno": "development",
-  "modelo_cargado": "reglas-keywords-v1",
-  "es_mock": true,
+  "motor": "modelo_ml_real",
+  "modelo_cargado": "clasificador_cursos.pkl",
+  "detalle_modelo": "Pipeline",
+  "es_mock": false,
   "contenidos_en_historial": 8
 }
 ```
+
+El campo **`motor`** indica qué engine responde las predicciones:
+
+| Valor | Significado |
+|-------|-------------|
+| `modelo_ml_real` | El artefacto entrenado está cargado y verificado |
+| `clasificador_reglas` | Fallback por taxonomía de palabras clave |
 
 ### `GET /contenidos` — historial con filtros
 
@@ -349,8 +359,8 @@ Filtrar por grupo de casos:
 pytest -k "validacion or historial"
 ```
 
-**Estado actual: 48 pruebas en verde** — contrato del Hackathon, validaciones,
-historial, métricas, CORS y mecanismo de fallback.
+**Estado actual: 73 pruebas en verde** — contrato del Hackathon, validaciones,
+historial, métricas, CORS, integración del modelo ML real y mecanismo de fallback.
 
 📖 Guía detallada para QA: [`docs/QA_TESTING_GUIDE.md`](docs/QA_TESTING_GUIDE.md)
 
@@ -408,28 +418,66 @@ Copiar `frontend/.env.example` a `frontend/.env`:
 
 ## 🤖 Integración del modelo de IA
 
-El backend funciona **hoy** con un clasificador por reglas (`reglas-keywords-v1`), que
-sirve de *fallback* permanente.
+### Modelo activo (Semana 3)
 
-Para activar el modelo real, el equipo de Data Science solo debe dejar el archivo:
+El backend usa el modelo entrenado por el equipo de Data Science:
 
-```
-backend/models/classifier.joblib
-```
+| Propiedad | Valor |
+|-----------|-------|
+| Archivo | `backend/models/clasificador_cursos.pkl` |
+| Arquitectura | `Pipeline(TfidfVectorizer → MultinomialNB)` |
+| Entrenado con | scikit-learn **1.6.1** |
+| Entrada | Texto crudo (`f"{titulo}. {texto}"`) |
 
-y reiniciar el servidor. `app/services.py` lo detecta automáticamente y cambia de
-clasificador — **sin tocar rutas, esquemas, frontend ni pruebas**. Verificar con:
+**Clases que predice:**
+
+| Clase | |
+|-------|-|
+| Desarrollo de Software y Web | Ciencia de Datos y Analítica |
+| Cloud Computing y DevOps | Inteligencia Artificial y ML |
+| Ciberseguridad y Redes | |
+
+> ⚠️ El pin `scikit-learn==1.6.1` en `requirements.txt` **debe coincidir** con la
+> versión de entrenamiento. Con otra versión el artefacto carga pero sklearn
+> advierte de posibles resultados inválidos.
+
+### Dos motores, un contrato
+
+`GET /salud` reporta cuál está respondiendo:
 
 ```bash
-curl http://localhost:8000/salud
+curl http://localhost:8000/salud | grep motor
 ```
 
-Debe responder `"es_mock": false`.
+| `motor` | Clase | Cuándo |
+|---------|-------|--------|
+| `modelo_ml_real` | `ClasificadorML` | Artefacto cargado y verificado |
+| `clasificador_reglas` | `ClasificadorReglas` | Fallback |
 
-Si el archivo no existe, no carga o falla al predecir, la API **sigue respondiendo**
-con el clasificador por reglas. La demo nunca se cae por un problema del modelo.
+La respuesta de `POST /contenido` es idéntica en ambos casos — el frontend no
+necesita saber cuál está activo.
 
-📖 Detalles del contrato: [`backend/models/README.md`](backend/models/README.md)
+### Mecanismo de fallback (4 etapas)
+
+`obtener_clasificador()` degrada a reglas si falla cualquier etapa:
+
+| # | Etapa | Qué detecta |
+|---|-------|-------------|
+| 1 | **Localizar** | El archivo no está en `backend/models/` |
+| 2 | **Deserializar** | Pickle corrupto, versión incompatible, dependencia ausente |
+| 3 | **Adaptar** | Estructura desconocida o sin `.predict()` |
+| 4 | **Sondear** | Carga bien pero revienta al predecir |
+
+Además, un error de inferencia **en caliente** se responde con reglas en vez de
+devolver un 500. **La demo nunca se cae por un problema del modelo.**
+
+### Formatos de artefacto aceptados
+
+El backend acepta las tres formas en que un notebook suele guardar el modelo:
+`Pipeline` completo, `dict` con modelo y vectorizador por separado, o `tuple`.
+Sirven tanto `joblib.dump` como `pickle.dump`.
+
+📖 Guía completa para Data Science: [`backend/models/README.md`](backend/models/README.md)
 
 ---
 

@@ -10,25 +10,20 @@ import { verificarSalud } from '../services/api'
  */
 function EstadoBackend() {
   const [estado, setEstado] = useState('verificando')
-  const [detalle, setDetalle] = useState('Verificando conexion...')
+  const [salud, setSalud] = useState(null)
 
   useEffect(() => {
     let vigente = true
 
     verificarSalud()
-      .then((salud) => {
+      .then((datos) => {
         if (!vigente) return
+        setSalud(datos)
         setEstado('ok')
-        setDetalle(
-          `API v${salud.version} - modelo: ${salud.modelo_cargado}${
-            salud.es_mock ? ' (mock)' : ''
-          }`,
-        )
       })
       .catch(() => {
         if (!vigente) return
         setEstado('error')
-        setDetalle('Backend sin conexion (puerto 8000)')
       })
 
     // Evita actualizar el estado si el componente se desmonta antes.
@@ -43,15 +38,40 @@ function EstadoBackend() {
     error: 'bg-rose-500',
   }
 
+  const etiquetas = {
+    verificando: 'Verificando',
+    ok: 'API conectada',
+    error: 'API caida',
+  }
+
+  const usaModeloReal = salud?.motor === 'modelo_ml_real'
+
+  const detalle =
+    estado === 'error'
+      ? 'Backend sin conexion (puerto 8000)'
+      : salud
+        ? `API v${salud.version} · motor: ${salud.motor} · artefacto: ${salud.modelo_cargado}`
+        : 'Verificando conexion...'
+
   return (
-    <div
-      className="hidden items-center gap-2 rounded-full border border-ink-700 bg-ink-850 px-3 py-1.5 md:flex"
-      title={detalle}
-    >
-      <span className={`h-2 w-2 rounded-full ${colores[estado]}`} />
-      <span className="text-xs text-mist-500">
-        {estado === 'ok' ? 'API conectada' : estado === 'error' ? 'API caida' : 'Verificando'}
-      </span>
+    <div className="hidden items-center gap-2 md:flex" title={detalle}>
+      <div className="flex items-center gap-2 rounded-full border border-ink-700 bg-ink-850 px-3 py-1.5">
+        <span className={`h-2 w-2 rounded-full ${colores[estado]}`} />
+        <span className="text-xs text-mist-500">{etiquetas[estado]}</span>
+      </div>
+
+      {/* Distingue de un vistazo si responde el modelo entrenado o el fallback. */}
+      {estado === 'ok' && salud && (
+        <span
+          className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+            usaModeloReal
+              ? 'border-brand-500/50 bg-brand-600/20 text-brand-300'
+              : 'border-amber-500/40 bg-amber-500/10 text-amber-200'
+          }`}
+        >
+          {usaModeloReal ? 'Modelo IA' : 'Reglas'}
+        </span>
+      )}
     </div>
   )
 }

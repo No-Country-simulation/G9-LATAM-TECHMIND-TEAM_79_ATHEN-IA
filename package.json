@@ -1,6 +1,6 @@
 {
   "name": "athenia-mvp",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "AthenIA - Organizacion Inteligente del Conocimiento Tecnico. MVP Hackathon ONE Alura + Oracle / No Country.",
   "scripts": {
