@@ -87,8 +87,11 @@ proyecto-mvp-hakaton/
 │   │   ├── .gitkeep           # Aquí llega classifier.joblib (Data Science)
 │   │   └── README.md          # Guía de integración del modelo
 │   ├── tests/
-│   │   ├── conftest.py        # Fixtures compartidas
-│   │   └── test_api.py        # 48 casos de prueba
+│   │   ├── conftest.py        # Fixtures compartidas, mocks y ciclo de vida de pruebas
+│   │   ├── test_api.py        # CP-01 a CP-113: Contrato, reglas de negocio y modelo ML (Propuesta 1)
+│   │   ├── test_integration.py# Propuesta 2: Pruebas de integración y flujo E2E
+│   │   ├── test_performance.py# Propuesta 3: Pruebas de carga, latencia y SLA en OCI
+│   │   └── test_resilience.py # Propuesta 4: Pruebas de resiliencia, casos borde y fallback
 │   ├── Dockerfile             # Imagen multi-stage python:3.13-slim
 │   ├── .dockerignore
 │   └── requirements.txt
