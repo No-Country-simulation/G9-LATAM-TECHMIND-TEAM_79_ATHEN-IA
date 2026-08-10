@@ -1,12 +1,19 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Search, X, SearchX, AlertCircle } from 'lucide-react'
 import CourseCard from '../components/CourseCard'
 import CategoryBadge from '../components/CategoryBadge'
+import ContentDetail from '../components/ContentDetail'
+import SearchHistory from '../components/SearchHistory'
 import { SkeletonGrid, Spinner, Skeleton } from '../components/Loaders'
 import { useCategorias, useContenidos } from '../hooks/useContenidos'
+import { useHistorialBusquedas } from '../hooks/useHistorialBusquedas'
 
 const FILTRO_TODOS = 'Todos'
+
+// Un término se registra en el historial solo tras esta pausa sin escribir.
+// Sin ella, teclear "docker" guardaría "d", "do", "doc"... como 6 búsquedas.
+const MS_ANTES_DE_REGISTRAR = 1200
 
 /**
  * Vista "Buscar Contenidos".
@@ -52,6 +59,36 @@ export default function BuscarContenidos() {
 
   const { items, total, cargando, error } = useContenidos(filtros)
 
+  // --- Historial de búsquedas (persistido en localStorage) ------------------
+  const historial = useHistorialBusquedas()
+  const { registrar } = historial
+
+  // Solo se registra cuando la búsqueda "reposa" y además devolvió resultados:
+  // guardar términos que no encontraron nada no le sirve al usuario.
+  useEffect(() => {
+    const termino = consulta.trim()
+    if (!termino || cargando || total === 0) return undefined
+
+    const temporizador = setTimeout(() => registrar(termino), MS_ANTES_DE_REGISTRAR)
+    return () => clearTimeout(temporizador)
+  }, [consulta, cargando, total, registrar])
+
+  // --- Detalle + recomendaciones -------------------------------------------
+  const [seleccionado, setSeleccionado] = useState(null)
+
+  /**
+   * Abre el detalle de una recomendación. Como el item recomendado solo trae
+   * campos resumidos, se busca la versión completa en los resultados ya
+   * cargados; si no está (por filtros activos), se usa lo que vino.
+   */
+  const abrirRelacionado = useCallback(
+    (recomendado) => {
+      const completo = items.find((i) => i.id === recomendado.id)
+      setSeleccionado(completo ?? recomendado)
+    },
+    [items],
+  )
+
   const limpiarBusqueda = () => setConsulta('')
 
   const hayFiltros = Boolean(filtros.buscar) || categoriaActiva !== FILTRO_TODOS
@@ -94,6 +131,14 @@ export default function BuscarContenidos() {
           )}
         </div>
       </div>
+
+      {/* --- Búsquedas recientes (localStorage) --- */}
+      <SearchHistory
+        entradas={historial.entradas}
+        onSeleccionar={setConsulta}
+        onEliminar={historial.eliminar}
+        onLimpiar={historial.limpiar}
+      />
 
       {/* --- Filtros por categoria (del motor activo) --- */}
       <div className="flex flex-wrap gap-2">
@@ -181,7 +226,7 @@ export default function BuscarContenidos() {
           }`}
         >
           {items.map((contenido) => (
-            <CourseCard key={contenido.id} contenido={contenido} />
+            <CourseCard key={contenido.id} contenido={contenido} onVer={setSeleccionado} />
           ))}
         </div>
       ) : (
@@ -199,6 +244,13 @@ export default function BuscarContenidos() {
           </div>
         )
       )}
+
+      {/* --- Detalle lateral con recomendaciones --- */}
+      <ContentDetail
+        contenido={seleccionado}
+        onCerrar={() => setSeleccionado(null)}
+        onAbrirOtro={abrirRelacionado}
+      />
     </div>
   )
 }

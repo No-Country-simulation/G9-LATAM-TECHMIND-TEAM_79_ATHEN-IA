@@ -100,6 +100,48 @@ class ClasificadorBase(ABC):
 
 
 # ---------------------------------------------------------------------------
+# Recomendaciones
+# ---------------------------------------------------------------------------
+
+
+@runtime_checkable
+class MotorRecomendaciones(Protocol):
+    """
+    Contrato de cualquier motor de recomendacion de contenido relacionado.
+
+    Implementacion actual: `recomendador.RecomendadorPorKeywords` (similitud
+    de Jaccard sobre palabras clave + coincidencia de categoria).
+
+    Para la Semana 5 se puede sustituir por un motor de embeddings
+    (similitud coseno sobre vectores densos) cumpliendo esta misma forma:
+    ni las rutas ni `dependencies.get_recomendador()` cambian de firma, solo
+    cambia que clase se instancia.
+    """
+
+    #: Identificador de la estrategia, expuesto en la respuesta para trazabilidad.
+    nombre: str
+
+    def recomendar(
+        self,
+        contenido: dict,
+        candidatos: List[dict],
+        limite: int = 5,
+    ) -> List[dict]:
+        """
+        Devuelve los contenidos mas parecidos a `contenido`, ordenados de mayor
+        a menor relevancia.
+
+        `candidatos` es el universo sobre el que buscar (normalmente el
+        historial completo). El motor debe excluir el propio `contenido` y
+        descartar los que no superen su umbral de relevancia.
+
+        Cada elemento devuelto incluye al menos las claves `id`, `titulo`,
+        `categoria`, `puntaje` y `palabras_compartidas`.
+        """
+        ...
+
+
+# ---------------------------------------------------------------------------
 # Persistencia
 # ---------------------------------------------------------------------------
 

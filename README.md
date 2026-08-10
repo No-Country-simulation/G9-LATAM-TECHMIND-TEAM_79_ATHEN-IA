@@ -7,14 +7,15 @@
 Plataforma que recibe contenido técnico, lo clasifica con Inteligencia Artificial,
 extrae palabras clave y devuelve métricas en formato JSON.
 
-[![Tests](https://img.shields.io/badge/tests-73%20passed-brightgreen)](docs/QA_TESTING_GUIDE.md)
+[![Tests](https://img.shields.io/badge/tests-120%20passed-brightgreen)](docs/QA_TESTING_GUIDE.md)
+[![Coverage](https://img.shields.io/badge/coverage-96%25-brightgreen)](docs/QA_TESTING_GUIDE.md)
 [![Backend](https://img.shields.io/badge/backend-FastAPI-009688?logo=fastapi&logoColor=white)](backend/)
 [![Frontend](https://img.shields.io/badge/frontend-React%2019-61DAFB?logo=react&logoColor=black)](frontend/)
 [![Python](https://img.shields.io/badge/python-3.13-3776AB?logo=python&logoColor=white)](backend/requirements.txt)
 [![Scikit-Learn](https://img.shields.io/badge/ML-scikit--learn-F7931E?logo=scikitlearn&logoColor=white)](backend/models/README.md)
 [![Tailwind](https://img.shields.io/badge/styles-Tailwind%20v4-06B6D4?logo=tailwindcss&logoColor=white)](frontend/src/index.css)
 [![Docker](https://img.shields.io/badge/docker-ready-2496ED?logo=docker&logoColor=white)](backend/Dockerfile)
-[![Status](https://img.shields.io/badge/MVP-Semana%203-8b5cf6)]()
+[![Status](https://img.shields.io/badge/MVP-Semana%204-8b5cf6)]()
 
 Hackathon **ONE Alura + Oracle** / **No Country** — Generación 9
 
@@ -249,7 +250,9 @@ npm run dev
 | `GET` | `/contenidos` | Historial de análisis (filtros: `categoria`, `buscar`, `limite`) |
 | `GET` | `/contenidos/{id}` | Detalle de un análisis |
 | `DELETE` | `/contenidos` | Vacía el historial (utilidad de QA) |
-| `GET` | `/metricas` | Agregados que alimentan el Dashboard |
+| `GET` | `/contenidos/{id}/recomendaciones` | **Semana 4** — contenido relacionado por similitud |
+| `GET` | `/metricas` | Resumen básico del historial |
+| `GET` | `/analiticas` | **Semana 4** — panel completo del Dashboard |
 
 ---
 
@@ -317,11 +320,50 @@ curl "http://localhost:8000/contenidos?categoria=Backend"
 curl http://localhost:8000/contenidos/1
 ```
 
-### `GET /metricas` — métricas del Dashboard
+### `GET /metricas` — resumen básico del historial
 
 ```bash
 curl http://localhost:8000/metricas
 ```
+
+### `GET /contenidos/{id}/recomendaciones` — contenido relacionado *(Semana 4)*
+
+```bash
+curl "http://localhost:8000/contenidos/2/recomendaciones?limite=3"
+```
+
+**Respuesta esperada (200):**
+
+```json
+{
+  "contenido_id": 2,
+  "titulo": "Docker para Principiantes",
+  "estrategia": "keywords-jaccard-v1",
+  "total": 1,
+  "items": [
+    {
+      "id": 8,
+      "titulo": "Kubernetes en Produccion",
+      "categoria": "Cloud Computing y DevOps",
+      "puntaje": 0.438,
+      "palabras_compartidas": ["Docker"]
+    }
+  ]
+}
+```
+
+La relevancia combina similitud de palabras clave (índice de Jaccard, 75%) con
+coincidencia de categoría (25%). `palabras_compartidas` es la evidencia que la
+UI usa para explicar *por qué* se recomendó cada elemento.
+
+### `GET /analiticas` — panel completo del Dashboard *(Semana 4)*
+
+```bash
+curl http://localhost:8000/analiticas
+```
+
+Superset de `/metricas`: añade distribución de confianza (Alta / Media / Baja),
+distribución por origen, actividad por día y el motor de clasificación activo.
 
 ### Validación — payload incompleto devuelve `422`
 

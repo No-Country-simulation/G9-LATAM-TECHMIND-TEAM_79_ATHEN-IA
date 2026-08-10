@@ -3,7 +3,7 @@
 > Documento dirigido al **QA Tester** del equipo.
 > Explica qué se está probando, por qué, cómo ejecutarlo y qué hacer cuando algo falla.
 
-**Estado actual: 73 pruebas automatizadas, todas en verde.**
+**Estado actual: 120 pruebas automatizadas en verde · 96% de cobertura.**
 
 ---
 
@@ -65,11 +65,18 @@ pytest
 ### Salida esperada
 
 ```
-collected 48 items
-backend/tests/test_api.py::test_salud_responde_200 PASSED               [  2%]
+collected 120 items
+backend/tests/test_api.py::test_salud_responde_200 PASSED               [  0%]
 ...
-============================= 48 passed in 0.26s ==============================
+---------- coverage: platform win32, python 3.13.13-final-0 ----------
+TOTAL                                    762     25    96%
+Required test coverage of 85% reached. Total coverage: 96.72%
+============================= 120 passed in 2.81s =============================
 ```
+
+> La cobertura se calcula siempre: `pytest.ini` incluye `--cov-fail-under=85`,
+> así que la suite **falla** si la cobertura baja de ese umbral. Es la misma
+> regla que aplica el pipeline de CI (`.github/workflows/ci.yml`).
 
 ### Comandos útiles
 
@@ -80,20 +87,22 @@ backend/tests/test_api.py::test_salud_responde_200 PASSED               [  2%]
 | Solo validaciones | `pytest -k "422 or vacias or espacios"` |
 | Solo historial | `pytest -k "historial or contenidos"` |
 | Solo métricas | `pytest -k metricas` |
+| Solo Semana 4 | `pytest backend/tests/test_recomendaciones.py backend/tests/test_analiticas.py` |
+| Sin cobertura (más rápido) | `pytest --no-cov` |
 | Detener en el primer fallo | `pytest -x` |
 | Ver `print` y logs | `pytest -s` |
 | Traza completa del error | `pytest --tb=long` |
 | Los 5 casos más lentos | `pytest --durations=5` |
 
-### Reporte de cobertura (opcional)
+### Reporte de cobertura en HTML
+
+La cobertura en terminal viene activada por defecto. Para navegarla como web:
 
 ```bash
-pip install pytest-cov
+pytest --cov-report=html
 ```
 
-```bash
-pytest --cov=backend/app --cov-report=term-missing
-```
+Abre `htmlcov/index.html` para ver, línea por línea, qué no está cubierto.
 
 ---
 
@@ -101,8 +110,13 @@ pytest --cov=backend/app --cov-report=term-missing
 
 ```
 backend/tests/
-├── conftest.py     # Configuración y fixtures compartidas
-└── test_api.py     # Los 48 casos de prueba
+├── conftest.py                # Configuración y fixtures compartidas
+├── test_api.py                # Contrato, reglas de negocio y modelo ML
+├── test_integration.py        # Flujo E2E
+├── test_performance.py        # Latencia y SLA
+├── test_resilience.py         # Casos borde y degradación
+├── test_recomendaciones.py    # Semana 4 — contenido relacionado
+└── test_analiticas.py         # Semana 4 — panel del dashboard
 ```
 
 ### Qué hace `conftest.py`
@@ -139,6 +153,8 @@ def test_salud_responde_200(client):
 | `CP-90` … `CP-99` | Integración del modelo ML (pipeline entrenado al vuelo) |
 | `CP-100` … `CP-105` | Resiliencia del mecanismo de fallback |
 | `CP-110` … `CP-113` | Artefacto **real** de Data Science |
+| `CP-200` … `CP-222` | **Semana 4** — recomendaciones de contenido |
+| `CP-230` … `CP-252` | **Semana 4** — analíticas del dashboard |
 
 ---
 
@@ -279,6 +295,58 @@ Cargan el `clasificador_cursos.pkl` **real** del repositorio.
 | CP-111 | Contrato del Hackathon | Se mantiene con el modelo de producción |
 | CP-112 | Predicciones dentro del catálogo | Toda categoría pertenece a `classes_` |
 | CP-113 | Texto con acentos y ñ | UTF-8 correcto de extremo a extremo |
+
+---
+
+### 4.13 Recomendaciones de contenido — `CP-200` … `CP-222` *(Semana 4)*
+
+Archivo: `backend/tests/test_recomendaciones.py`
+
+Cubren `GET /contenidos/{id}/recomendaciones` en dos niveles: las métricas de
+similitud puras (unidad, sin HTTP) y el endpoint completo.
+
+| ID | Caso | Resultado esperado |
+|----|------|--------------------|
+| CP-200 | Jaccard con conjuntos idénticos | Similitud `1.0` |
+| CP-201 | Jaccard sin coincidencias | Similitud `0.0` |
+| CP-202 | Insensible a mayúsculas y acentos | "Analítica" == "analitica" |
+| CP-203 | Normaliza por tamaño | Compartir 1 de 2 pesa más que 1 de 5 |
+| CP-204 | Listas vacías | `0.0`, sin excepción |
+| CP-205 | Puntaje combinado | Palabras clave 75% + categoría 25% |
+| CP-206 | Palabras compartidas | Conservan el casing del contenido origen |
+| CP-210 | Contrato de la respuesta | `contenido_id`, `estrategia`, `total`, `items` |
+| CP-211 | Ranking correcto | Para Docker, Kubernetes encabeza la lista |
+| CP-212 | Nunca se auto-recomienda | El contenido consultado se excluye |
+| CP-213 | Evidencia incluida | `palabras_compartidas` explica la sugerencia |
+| CP-214 | Orden descendente | Por puntaje, de mayor a menor |
+| CP-215 | Límite respetado | `?limite=1` devuelve como máximo 1 |
+| CP-216 | Límite inválido *(4 variantes)* | `0`, `-1`, `21`, `"abc"` → 422 |
+| CP-217 | Id inexistente | 404 con formato `ErrorResponse` |
+| CP-218 | Sin relacionados | `total: 0` con lista vacía — no es error |
+| CP-220 | Cumple el `Protocol` | Tipado estructural, sin herencia |
+| CP-221 | Motor sustituible | `dependency_overrides` cambia la estrategia |
+| CP-222 | Tope defensivo | El motor nunca excede `LIMITE_MAXIMO` |
+
+### 4.14 Analíticas del dashboard — `CP-230` … `CP-252` *(Semana 4)*
+
+Archivo: `backend/tests/test_analiticas.py`
+
+| ID | Caso | Resultado esperado |
+|----|------|--------------------|
+| CP-230 | Responde 200 | Incluso sin datos |
+| CP-231 | Historial vacío | Todo en cero y listas vacías — nunca falla |
+| CP-232 | Motor reportado | Coincide con lo que dice `/salud` |
+| CP-240 | Totales | Reflejan el historial |
+| CP-241 | Distribución cubre el total | La suma iguala `total_contenidos` |
+| CP-242 | Orden por cantidad | Categorías de mayor a menor |
+| CP-243 | Franjas de confianza | Siempre 3, en orden fijo Alta → Media → Baja |
+| CP-244 | Origen ausente | Se agrupa como "Sin origen", no desaparece |
+| CP-245 | Top palabras clave | Máximo 10, ordenadas |
+| CP-246 | Actividad temporal | Orden cronológico ascendente |
+| CP-247 | Refleja contenido nuevo | Los agregados se mueven de inmediato |
+| CP-250 | Coherencia con `/metricas` | Los campos solapados coinciden |
+| CP-251 | Regresión de `/metricas` | El contrato anterior sigue intacto |
+| CP-252 | Independiente del estado global | `calcular_analiticas` acepta un doble |
 
 ---
 

@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { obtenerCategorias, obtenerContenidos, obtenerMetricas } from '../services/api'
+import {
+  obtenerAnaliticas,
+  obtenerCategorias,
+  obtenerContenidos,
+  obtenerMetricas,
+  obtenerRecomendaciones,
+} from '../services/api'
 import { CATEGORIAS_REGLAS } from '../data/categorias'
 
 /**
@@ -126,4 +132,89 @@ export function useMetricas() {
   }, [recarga])
 
   return { metricas, cargando, error, refrescar }
+}
+
+/**
+ * Panel completo de analiticas (`GET /analiticas`).
+ *
+ * Reemplaza a `useMetricas` en el Dashboard: trae los mismos totales mas
+ * distribucion de confianza, origenes y actividad temporal, en una sola
+ * peticion.
+ */
+export function useAnaliticas() {
+  const [analiticas, setAnaliticas] = useState(null)
+  const [cargando, setCargando] = useState(true)
+  const [error, setError] = useState('')
+
+  const [recarga, setRecarga] = useState(0)
+  const refrescar = useCallback(() => setRecarga((n) => n + 1), [])
+
+  useEffect(() => {
+    const controlador = new AbortController()
+    setCargando(true)
+
+    obtenerAnaliticas(controlador.signal)
+      .then((data) => {
+        setAnaliticas(data)
+        setError('')
+      })
+      .catch((fallo) => {
+        if (controlador.signal.aborted) return
+        setError(fallo.message)
+        setAnaliticas(null)
+      })
+      .finally(() => {
+        if (!controlador.signal.aborted) setCargando(false)
+      })
+
+    return () => controlador.abort()
+  }, [recarga])
+
+  return { analiticas, cargando, error, refrescar }
+}
+
+/**
+ * Recomendaciones para un contenido (`GET /contenidos/{id}/recomendaciones`).
+ *
+ * Con `contenidoId` nulo no consulta nada — asi el panel de detalle puede
+ * montar el hook incondicionalmente (las reglas de hooks prohiben llamarlo
+ * dentro de un `if`) y activarlo solo cuando hay un contenido seleccionado.
+ */
+export function useRecomendaciones(contenidoId, { limite = 5 } = {}) {
+  const [recomendaciones, setRecomendaciones] = useState([])
+  const [estrategia, setEstrategia] = useState('')
+  const [cargando, setCargando] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (contenidoId == null) {
+      setRecomendaciones([])
+      setEstrategia('')
+      setError('')
+      setCargando(false)
+      return undefined
+    }
+
+    const controlador = new AbortController()
+    setCargando(true)
+
+    obtenerRecomendaciones(contenidoId, { limite }, controlador.signal)
+      .then((data) => {
+        setRecomendaciones(data.items)
+        setEstrategia(data.estrategia)
+        setError('')
+      })
+      .catch((fallo) => {
+        if (controlador.signal.aborted) return
+        setError(fallo.message)
+        setRecomendaciones([])
+      })
+      .finally(() => {
+        if (!controlador.signal.aborted) setCargando(false)
+      })
+
+    return () => controlador.abort()
+  }, [contenidoId, limite])
+
+  return { recomendaciones, estrategia, cargando, error }
 }

@@ -13,7 +13,8 @@ import {
 import StatCard from '../components/StatCard'
 import CategoryBadge from '../components/CategoryBadge'
 import { SkeletonStat, Skeleton, Spinner } from '../components/Loaders'
-import { useContenidos, useMetricas } from '../hooks/useContenidos'
+import AnalyticsPanel from '../components/AnalyticsPanel'
+import { useAnaliticas, useContenidos } from '../hooks/useContenidos'
 import { aPorcentaje, colorDeCategoria, formatearFecha } from '../data/categorias'
 
 const RADIO = 54
@@ -22,6 +23,10 @@ const CIRCUNFERENCIA = 2 * Math.PI * RADIO
 /**
  * Grafico de dona en SVG puro.
  * Se dibuja a mano para no sumar una libreria de charts al bundle del MVP.
+ *
+ * `distribucion` llega de `GET /analiticas`, cuyos segmentos usan la clave
+ * generica `etiqueta` (el mismo esquema `SegmentoConteo` se reutiliza para
+ * categorias, origenes y franjas de confianza).
  */
 function DonaCategorias({ distribucion, total }) {
   let acumulado = 0
@@ -31,7 +36,7 @@ function DonaCategorias({ distribucion, total }) {
       <svg viewBox="0 0 140 140" className="h-40 w-40 shrink-0 -rotate-90">
         <circle cx="70" cy="70" r={RADIO} fill="none" stroke="#1a1530" strokeWidth="16" />
 
-        {distribucion.map(({ categoria, cantidad }) => {
+        {distribucion.map(({ etiqueta: categoria, cantidad }) => {
           const porcion = (cantidad / total) * CIRCUNFERENCIA
           const desfase = -acumulado
           acumulado += porcion
@@ -78,7 +83,7 @@ function DonaCategorias({ distribucion, total }) {
       </svg>
 
       <ul className="w-full space-y-2.5">
-        {distribucion.map(({ categoria, cantidad, porcentaje }) => (
+        {distribucion.map(({ etiqueta: categoria, cantidad, porcentaje }) => (
           <li key={categoria} className="flex items-center gap-2.5 text-sm">
             <span
               className="h-2.5 w-2.5 shrink-0 rounded-sm"
@@ -137,13 +142,13 @@ function SinDatos() {
 
 /** Vista principal: metricas generales alimentadas por el historial real. */
 export default function Dashboard() {
-  const { metricas, cargando: cargandoMetricas, error, refrescar } = useMetricas()
+  const { analiticas, cargando: cargandoMetricas, error, refrescar } = useAnaliticas()
   const { items: recientes, cargando: cargandoRecientes } = useContenidos({
     limite: 4,
     debounceMs: 0,
   })
 
-  const hayDatos = metricas && metricas.total_cursos > 0
+  const hayDatos = analiticas && analiticas.total_contenidos > 0
 
   return (
     <div className="space-y-6">
@@ -197,28 +202,28 @@ export default function Dashboard() {
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             etiqueta="Cursos Totales"
-            valor={metricas?.total_cursos ?? 0}
+            valor={analiticas?.total_contenidos ?? 0}
             icono={BookMarked}
             acento="#8b5cf6"
             variacion="Contenidos analizados"
           />
           <StatCard
             etiqueta="Categorias"
-            valor={metricas?.total_categorias ?? 0}
+            valor={analiticas?.total_categorias ?? 0}
             icono={Layers}
             acento="#38bdf8"
             variacion="Detectadas por la IA"
           />
           <StatCard
             etiqueta="Palabras Clave"
-            valor={metricas?.total_palabras_clave ?? 0}
+            valor={analiticas?.total_palabras_clave ?? 0}
             icono={Tag}
             acento="#34d399"
             variacion="Tecnologias unicas"
           />
           <StatCard
             etiqueta="Confianza Promedio"
-            valor={`${aPorcentaje(metricas?.confianza_promedio)}%`}
+            valor={`${aPorcentaje(analiticas?.confianza_promedio)}%`}
             icono={Gauge}
             acento="#fbbf24"
             variacion="Precision del modelo"
@@ -240,8 +245,8 @@ export default function Dashboard() {
                 Distribucion del contenido clasificado por AthenIA.
               </p>
               <DonaCategorias
-                distribucion={metricas.distribucion}
-                total={metricas.total_cursos}
+                distribucion={analiticas.distribucion_categorias}
+                total={analiticas.total_contenidos}
               />
             </section>
 
@@ -291,7 +296,7 @@ export default function Dashboard() {
           </div>
 
           {/* --- Palabras clave mas frecuentes --- */}
-          {metricas.top_palabras_clave.length > 0 && (
+          {analiticas.top_palabras_clave.length > 0 && (
             <section className="card p-6">
               <h2 className="text-base font-semibold text-mist-100">
                 Tecnologias mas frecuentes
@@ -299,9 +304,20 @@ export default function Dashboard() {
               <p className="mb-5 mt-1 text-sm text-mist-500">
                 Palabras clave extraidas por el modelo en todo tu contenido.
               </p>
-              <TopPalabrasClave palabras={metricas.top_palabras_clave} />
+              <TopPalabrasClave palabras={analiticas.top_palabras_clave} />
             </section>
           )}
+
+          {/* --- Panel de analiticas (Semana 4) --- */}
+          <div>
+            <h2 className="mb-1 text-lg font-bold tracking-tight text-mist-100">
+              Analiticas
+            </h2>
+            <p className="mb-4 text-sm text-mist-500">
+              Confianza del modelo, origenes y actividad en el tiempo.
+            </p>
+            <AnalyticsPanel analiticas={analiticas} cargando={false} />
+          </div>
         </>
       )}
     </div>

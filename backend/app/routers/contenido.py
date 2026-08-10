@@ -15,15 +15,17 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from .. import services
-from ..dependencies import get_clasificador, get_repositorio
-from ..domain.protocols import Clasificador, RepositorioContenidos
+from ..dependencies import get_clasificador, get_recomendador, get_repositorio
+from ..domain.protocols import Clasificador, MotorRecomendaciones, RepositorioContenidos
 from ..schemas import (
     AnalisisOutput,
     ContenidoAlmacenado,
     ContenidoInput,
     ErrorResponse,
     ListaContenidos,
+    ListaRecomendaciones,
     MetricasOutput,
+    RecomendacionItem,
 )
 
 logger = logging.getLogger("athenia.routers.contenido")
@@ -121,6 +123,57 @@ def obtener_contenido(
             detail=f"No existe un contenido con id {contenido_id}.",
         )
     return ContenidoAlmacenado(**item)
+
+
+@router.get(
+    "/contenidos/{contenido_id}/recomendaciones",
+    tags=["Recomendaciones"],
+    summary="Contenido relacionado",
+    response_model=ListaRecomendaciones,
+    responses={404: {"model": ErrorResponse}},
+)
+def recomendaciones_de_contenido(
+    contenido_id: int,
+    limite: int = Query(
+        default=5,
+        ge=1,
+        le=20,
+        description="Maximo de recomendaciones a devolver.",
+    ),
+    repositorio: RepositorioContenidos = Depends(get_repositorio),
+    recomendador: MotorRecomendaciones = Depends(get_recomendador),
+) -> ListaRecomendaciones:
+    """
+    Devuelve los contenidos del historial mas parecidos al indicado.
+
+    La relevancia combina la similitud de palabras clave (indice de Jaccard,
+    75% del puntaje) con la coincidencia de categoria (25%). Cada
+    recomendacion incluye `palabras_compartidas`, para que la interfaz pueda
+    explicar *por que* se sugirio en vez de mostrar solo un numero.
+
+    Un contenido sin coincidencias devuelve `total: 0` con lista vacia —no es
+    un error—, y un id inexistente devuelve 404.
+    """
+    referencia = repositorio.obtener(contenido_id)
+    if referencia is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No existe un contenido con id {contenido_id}.",
+        )
+
+    sugerencias = recomendador.recomendar(
+        referencia,
+        repositorio.listar(),
+        limite=limite,
+    )
+
+    return ListaRecomendaciones(
+        contenido_id=contenido_id,
+        titulo=referencia.get("titulo", ""),
+        estrategia=recomendador.nombre,
+        total=len(sugerencias),
+        items=[RecomendacionItem(**s) for s in sugerencias],
+    )
 
 
 @router.delete(

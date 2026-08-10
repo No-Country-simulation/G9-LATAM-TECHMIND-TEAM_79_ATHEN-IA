@@ -34,7 +34,13 @@ resuelve `Depends(get_clasificador)` en cada peticion, asi que:
 from __future__ import annotations
 
 from . import services
-from .domain.protocols import Clasificador, RepositorioContenidos
+from .domain.protocols import Clasificador, MotorRecomendaciones, RepositorioContenidos
+from .recomendador import RecomendadorPorKeywords
+
+# Instancia unica del motor de recomendaciones. Es sin estado (solo calcula
+# sobre los candidatos que recibe), asi que compartirla entre peticiones es
+# seguro y evita reconstruirla en cada request.
+_recomendador = RecomendadorPorKeywords()
 
 
 def get_clasificador() -> Clasificador:
@@ -52,3 +58,15 @@ def get_clasificador() -> Clasificador:
 def get_repositorio() -> RepositorioContenidos:
     """Devuelve el repositorio de historial activo."""
     return services.repositorio
+
+
+def get_recomendador() -> MotorRecomendaciones:
+    """
+    Devuelve el motor de recomendaciones activo.
+
+    Punto unico de sustitucion: cambiar a un motor de embeddings en la
+    Semana 5 es reemplazar la instancia de arriba, sin tocar la ruta
+    `/contenidos/{id}/recomendaciones` ni su firma — que depende del
+    `Protocol` `MotorRecomendaciones`, no de `RecomendadorPorKeywords`.
+    """
+    return _recomendador

@@ -103,12 +103,43 @@ export function limpiarHistorial() {
 }
 
 // ---------------------------------------------------------------------------
+// Recomendaciones
+// ---------------------------------------------------------------------------
+
+/**
+ * GET /contenidos/{id}/recomendaciones - contenido relacionado.
+ *
+ * Cada item trae `puntaje` y `palabras_compartidas`, para que la UI pueda
+ * explicar por que se recomendo en vez de mostrar solo un numero.
+ *
+ * @param {number} id Contenido de referencia.
+ * @param {{limite?: number}} opciones
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<{contenido_id:number, estrategia:string, total:number, items:object[]}>}
+ */
+export function obtenerRecomendaciones(id, { limite = 5 } = {}, signal) {
+  return peticion(() =>
+    api.get(`/contenidos/${id}/recomendaciones`, { params: { limite }, signal }),
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Metricas y metadatos
 // ---------------------------------------------------------------------------
 
-/** GET /metricas - agregados que alimentan el Dashboard. */
+/** GET /metricas - resumen basico (compatibilidad; usa /analiticas para el panel). */
 export function obtenerMetricas(signal) {
   return peticion(() => api.get('/metricas', { signal }))
+}
+
+/**
+ * GET /analiticas - panel completo del Dashboard.
+ *
+ * Superset de `/metricas`: agrega distribucion de confianza, distribucion por
+ * origen, actividad temporal y el motor de clasificacion activo.
+ */
+export function obtenerAnaliticas(signal) {
+  return peticion(() => api.get('/analiticas', { signal }))
 }
 
 /** GET /salud - verificacion de uptime (la usa el indicador del Header). */

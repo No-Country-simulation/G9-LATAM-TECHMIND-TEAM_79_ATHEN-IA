@@ -57,6 +57,7 @@ __all__ = [
     "recargar_clasificador",
     "analizar_y_guardar",
     "calcular_metricas",
+    "calcular_analiticas",
     "sembrar_demo",
 ]
 
@@ -159,6 +160,111 @@ def calcular_metricas(items: List[dict]) -> dict:
             {"palabra": palabra, "cantidad": cantidad}
             for palabra, cantidad in palabras.most_common(10)
         ],
+    }
+
+
+# --- Analiticas del dashboard (Semana 4) -----------------------------------
+
+#: Franjas de confianza, evaluadas en orden. La primera cuyo umbral se cumple
+#: gana, asi que deben ir de mayor a menor.
+FRANJAS_CONFIANZA = (
+    ("Alta (≥75%)", 0.75),
+    ("Media (50-74%)", 0.50),
+    ("Baja (<50%)", 0.0),
+)
+
+ORIGEN_NO_ESPECIFICADO = "Sin origen"
+
+
+def _segmentos(conteo: Counter, total: int) -> List[dict]:
+    """Convierte un `Counter` en segmentos con porcentaje, de mayor a menor."""
+    return [
+        {
+            "etiqueta": etiqueta,
+            "cantidad": cantidad,
+            "porcentaje": round(cantidad / total * 100, 1),
+        }
+        for etiqueta, cantidad in conteo.most_common()
+    ]
+
+
+def _franja_de_confianza(probabilidad: float) -> str:
+    """Etiqueta de la franja a la que pertenece una probabilidad."""
+    for etiqueta, minimo in FRANJAS_CONFIANZA:
+        if probabilidad >= minimo:
+            return etiqueta
+    return FRANJAS_CONFIANZA[-1][0]
+
+
+def calcular_analiticas(items: List[dict], motor: Clasificador) -> dict:
+    """
+    Agrega el historial en el panel completo de analiticas (`GET /analiticas`).
+
+    Superset de `calcular_metricas`: ademas de los totales, produce la
+    distribucion de confianza (para detectar contenido clasificado con poca
+    certeza), la distribucion por origen y la actividad por dia.
+
+    Recibe `motor` en vez de leerlo del modulo para no depender del estado
+    global: la ruta le pasa el clasificador resuelto por `Depends`, y las
+    pruebas pueden inyectar un doble.
+    """
+    if not items:
+        return {
+            "total_contenidos": 0,
+            "total_categorias": 0,
+            "total_palabras_clave": 0,
+            "confianza_promedio": 0.0,
+            "distribucion_categorias": [],
+            "distribucion_confianza": [],
+            "distribucion_origenes": [],
+            "top_palabras_clave": [],
+            "actividad_reciente": [],
+            "motor_activo": motor.motor,
+            "modelo_cargado": motor.nombre,
+        }
+
+    total = len(items)
+    por_categoria = Counter(i["categoria"] for i in items)
+    palabras = Counter(p for i in items for p in i.get("informacion_adicional", []))
+    por_confianza = Counter(_franja_de_confianza(i["probabilidad"]) for i in items)
+    por_origen = Counter(i.get("origen") or ORIGEN_NO_ESPECIFICADO for i in items)
+
+    # Actividad por dia. `creado_en` es un datetime con tz UTC; se agrupa por
+    # fecha ISO y se ordena cronologicamente para que el grafico de linea del
+    # frontend no tenga que reordenar nada.
+    por_dia: Counter = Counter()
+    for item in items:
+        creado = item.get("creado_en")
+        if creado is not None:
+            por_dia[creado.date().isoformat()] += 1
+
+    return {
+        "total_contenidos": total,
+        "total_categorias": len(por_categoria),
+        "total_palabras_clave": len(palabras),
+        "confianza_promedio": round(sum(i["probabilidad"] for i in items) / total, 2),
+        "distribucion_categorias": _segmentos(por_categoria, total),
+        # Se ordena por la definicion de FRANJAS_CONFIANZA (Alta, Media, Baja)
+        # y no por cantidad: una leyenda que cambia de orden segun los datos
+        # es confusa de leer en el dashboard.
+        "distribucion_confianza": [
+            {
+                "etiqueta": etiqueta,
+                "cantidad": por_confianza.get(etiqueta, 0),
+                "porcentaje": round(por_confianza.get(etiqueta, 0) / total * 100, 1),
+            }
+            for etiqueta, _ in FRANJAS_CONFIANZA
+        ],
+        "distribucion_origenes": _segmentos(por_origen, total),
+        "top_palabras_clave": [
+            {"palabra": palabra, "cantidad": cantidad}
+            for palabra, cantidad in palabras.most_common(10)
+        ],
+        "actividad_reciente": [
+            {"fecha": fecha, "cantidad": cantidad} for fecha, cantidad in sorted(por_dia.items())
+        ],
+        "motor_activo": motor.motor,
+        "modelo_cargado": motor.nombre,
     }
 
 
