@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, Bell, Menu } from 'lucide-react'
 import { verificarSalud } from '../services/api'
+import { USUARIO_DEMO, iniciales } from '../data/usuario'
 
 /**
  * Indicador de conexion con el backend.
@@ -80,7 +81,7 @@ function EstadoBackend() {
  * Barra superior: buscador rapido, estado de la API y perfil de usuario.
  * `onAbrirMenu` despliega el Sidebar en pantallas pequenas.
  */
-export default function Header({ onAbrirMenu = () => {}, usuario = 'Luis Perez' }) {
+export default function Header({ onAbrirMenu = () => {}, usuario = USUARIO_DEMO.nombre }) {
   const navegar = useNavigate()
   const [consulta, setConsulta] = useState('')
 
@@ -92,12 +93,7 @@ export default function Header({ onAbrirMenu = () => {}, usuario = 'Luis Perez' 
     navegar(`/buscar?q=${encodeURIComponent(termino)}`)
   }
 
-  const iniciales = usuario
-    .split(' ')
-    .map((parte) => parte[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
+  const avatar = iniciales(usuario)
 
   return (
     <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-ink-700 bg-ink-900/85 px-4 py-3 backdrop-blur-md lg:px-8">
@@ -129,23 +125,28 @@ export default function Header({ onAbrirMenu = () => {}, usuario = 'Luis Perez' 
       <div className="ml-auto flex items-center gap-3">
         <EstadoBackend />
 
+        {/* Notificaciones: fuera del alcance del MVP. Se marca como
+            deshabilitado en vez de dejar un boton que no responde al clic, y
+            se quito el punto de "no leidas" porque anunciaba avisos que no
+            existen — en la demo, un jurado que lo pulse no veria nada. */}
         <button
           type="button"
-          className="relative rounded-lg p-2 text-mist-300 transition-colors hover:bg-ink-800"
-          aria-label="Notificaciones"
+          disabled
+          title="Notificaciones (proximamente)"
+          className="relative rounded-lg p-2 text-mist-500 opacity-50 transition-colors"
+          aria-label="Notificaciones (proximamente)"
         >
           <Bell size={19} />
-          <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-brand-400" />
         </button>
 
         {/* Perfil */}
         <div className="flex items-center gap-2.5 rounded-xl border border-ink-700 bg-ink-850 px-2.5 py-1.5">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-xs font-bold text-white">
-            {iniciales}
+            {avatar}
           </span>
           <div className="hidden leading-tight sm:block">
             <p className="text-xs font-semibold text-mist-100">{usuario}</p>
-            <p className="text-[10px] text-mist-500">Estudiante</p>
+            <p className="text-[10px] text-mist-500">{USUARIO_DEMO.rol}</p>
           </div>
         </div>
       </div>

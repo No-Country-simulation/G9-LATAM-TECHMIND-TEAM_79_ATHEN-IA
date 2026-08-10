@@ -1,0 +1,87 @@
+# =============================================================================
+# AthenIA - Stack completo (backend FastAPI + frontend React/Nginx)
+#
+# Levantar todo:
+#   docker compose up --build
+#
+#   Frontend  -> http://localhost:8080
+#   API       -> http://localhost:8080/api/salud   (a traves de Nginx)
+#   Swagger   -> http://localhost:8000/docs        (puerto directo del backend)
+#
+# Parar y limpiar:
+#   docker compose down
+#
+# Despliegue en OCI: ver docs/GUIA_TECNICA_Y_PRESENTACION_SEMANA3.md y la
+# seccion "Variables de entorno" del README.
+# =============================================================================
+
+services:
+  athenia-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: athenia-backend:latest
+    container_name: athenia-backend
+
+    environment:
+      ATHENIA_ENV: production
+      ATHENIA_HOST: 0.0.0.0
+      ATHENIA_PORT: 8000
+      ATHENIA_LOG_LEVEL: INFO
+
+      # El navegador nunca llama al backend directamente: Nginx proxea /api,
+      # asi que no hacen falta origenes cruzados. Si se expone el backend en un
+      # dominio propio, enumerar aqui los origenes reales separados por coma
+      # (nunca "*" en produccion cuando se usan credenciales).
+      ATHENIA_CORS_ORIGINS: "http://localhost:8080"
+
+      # Precarga de contenido de ejemplo. Ponerlo en "false" para arrancar con
+      # la biblioteca vacia en un entorno real.
+      ATHENIA_SEED_DEMO: "true"
+
+    # Puerto expuesto para Swagger y para que QA pruebe la API directamente.
+    # En OCI se puede cerrar y dejar solo el 8080 del frontend.
+    ports:
+      - "8000:8000"
+
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - |
+          import urllib.request, sys
+          sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:8000/salud", timeout=4).status == 200 else 1)
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+    restart: unless-stopped
+    networks: [athenia]
+
+  athenia-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Vacio a proposito: el frontend usa rutas relativas y Nginx proxea.
+        VITE_API_URL: ""
+    image: athenia-frontend:latest
+    container_name: athenia-frontend
+
+    ports:
+      - "8080:80"
+
+    # Nginx hace proxy_pass a `athenia-backend`; si arranca antes de que el
+    # backend este sano, las primeras peticiones fallarian con 502.
+    depends_on:
+      athenia-backend:
+        condition: service_healthy
+
+    restart: unless-stopped
+    networks: [athenia]
+
+networks:
+  athenia:
+    driver: bridge

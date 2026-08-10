@@ -20,7 +20,14 @@ pydantic==2.10.5
 scikit-learn==1.6.1
 joblib==1.5.3
 numpy>=2.0.0
-pandas==3.0.5
+
+# NOTA: `pandas` NO figura aqui a proposito.
+# El artefacto es un Pipeline(TfidfVectorizer + MultinomialNB): para
+# deserializarlo y predecir bastan scikit-learn, numpy, scipy y joblib. Se
+# verifico bloqueando la importacion de pandas y confirmando que el modelo
+# carga y clasifica igual. Quitarlo adelgaza la imagen de OCI ~40 MB y acorta
+# el `pip install` del CI. El notebook de Data Science tiene su propio entorno
+# y si lo necesita, pero eso no obliga al runtime de la API.
 
 # --- Pruebas / QA ------------------------------------------------------------
 pytest==8.3.4

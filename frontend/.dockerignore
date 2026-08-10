@@ -1,0 +1,16 @@
+# El build corre dentro del contenedor: nunca se copian artefactos del host.
+node_modules/
+dist/
+.vite/
+
+.env
+.env.*
+!.env.example
+
+Dockerfile
+.dockerignore
+*.md
+
+.DS_Store
+Thumbs.db
+*.log

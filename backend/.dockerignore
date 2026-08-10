@@ -1,4 +1,4 @@
-# Reduce el contexto de build: solo `app/`, `models/` y requirements.txt
+# Reduce el contexto de build. Solo `app/`, `models/` y `requirements.txt`
 # terminan en la imagen.
 tests/
 __pycache__/
@@ -14,8 +14,21 @@ venv/
 Dockerfile
 .dockerignore
 
-# Los modelos entrenados se montan como volumen o se descargan de OCI Object
-# Storage; no deben quedar horneados en la imagen.
-models/*.joblib
-models/*.pkl
-models/*.pickle
+# NOTA SOBRE LOS MODELOS
+# ----------------------
+# Hasta la Semana 3 los artefactos se excluian aqui, porque la estrategia era
+# montarlos como volumen o descargarlos de OCI Object Storage. El equipo cambio
+# de estrategia y versiono `clasificador_cursos.pkl` en el repositorio
+# (commit 5af2aff, "incluir clasificador_cursos.pkl para despliegue directo"),
+# de modo que la imagen debe llevarlo horneado.
+#
+# Excluirlo aqui haria que `COPY models ./models` copiara una carpeta vacia y
+# el contenedor arrancaria en modo fallback (`clasificador_reglas`) sin ningun
+# error visible: la demo mostraria el clasificador por reglas en vez del modelo
+# entrenado. Por eso NO se excluyen los .pkl/.joblib.
+#
+# Si en el futuro se vuelve a la distribucion por Object Storage, reactivar
+# estas lineas Y quitar el `COPY models` del Dockerfile en el mismo commit:
+# models/*.joblib
+# models/*.pkl
+# models/*.pickle

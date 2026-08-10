@@ -14,10 +14,15 @@ jobs:
     - name: Checkout del código
       uses: actions/checkout@v4
 
-    - name: Configurar Python 3.11
+    # 3.13 para igualar el Dockerfile (python:3.13-slim) y el entorno local.
+    # Con 3.11 el CI validaba una combinacion de versiones que no es la que se
+    # despliega en OCI.
+    - name: Configurar Python 3.13
       uses: actions/setup-python@v5
       with:
-        python-version: "3.11"
+        python-version: "3.13"
+        cache: pip
+        cache-dependency-path: backend/requirements.txt
 
     - name: Instalar dependencias
       run: |

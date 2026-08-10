@@ -43,3 +43,11 @@ yarn-error.log*
 
 .vercel
 .env*
+
+# Las plantillas SI se versionan. Esta excepcion va al final a proposito:
+# git aplica "la ultima regla que coincide gana", asi que un `!.env.example`
+# colocado antes de `.env*` no tendria efecto y los `.env.example` nuevos
+# quedarian ignorados en silencio (solo sobrevive `frontend/.env.example`
+# porque ya estaba versionado antes de anadirse la regla).
+!.env.example
+!**/.env.example

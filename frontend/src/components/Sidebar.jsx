@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom'
+import { useState } from 'react'
+import { NavLink, useNavigate } from 'react-router-dom'
 import {
   Home,
   PlusCircle,
@@ -9,6 +10,8 @@ import {
   X,
 } from 'lucide-react'
 import Logo from './Logo'
+import ConfirmDialog from './ConfirmDialog'
+import { limpiarHistorialBusquedas } from '../hooks/useHistorialBusquedas'
 
 /** Rutas de la navegacion principal. */
 const NAVEGACION = [
@@ -25,6 +28,26 @@ const NAVEGACION = [
  * y `onCerrar` lo oculta al navegar o al tocar el fondo.
  */
 export default function Sidebar({ abierto = false, onCerrar = () => {} }) {
+  const navegar = useNavigate()
+  const [confirmandoSalida, setConfirmandoSalida] = useState(false)
+
+  /**
+   * Cierre de sesion.
+   *
+   * Todavia no hay autenticacion (llega despues del MVP), asi que no hay token
+   * que invalidar. Lo que si existe son datos locales del usuario: el historial
+   * de busquedas en `localStorage`. Se borran de verdad y se vuelve al inicio.
+   *
+   * Cuando exista login, este mismo handler sumara la invalidacion del token y
+   * la redireccion a `/login`, sin cambiar nada del resto del Sidebar.
+   */
+  const cerrarSesion = () => {
+    limpiarHistorialBusquedas()
+    setConfirmandoSalida(false)
+    onCerrar() // repliega el drawer en movil
+    navegar('/')
+  }
+
   const claseEnlace = ({ isActive }) =>
     [
       'flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors',
@@ -87,21 +110,28 @@ export default function Sidebar({ abierto = false, onCerrar = () => {} }) {
           ))}
         </nav>
 
-        {/* --- Aviso de estado del MVP --- */}
+        {/* --- Estado del proyecto ---
+            Esta tarjeta anunciaba "datos simulados / integracion real en la
+            Semana 3". Desde la Semana 3 el modelo entrenado esta activo, asi
+            que el texto era FALSO: un jurado leyendolo en el Demo Day habria
+            creido que la clasificacion es de mentira. El estado del motor en
+            vivo lo muestra el badge del Header ("Modelo IA" / "Reglas"), que
+            se alimenta de `GET /salud`. */}
         <div className="mt-auto space-y-3">
           <div className="rounded-xl border border-ink-700 bg-ink-850 p-3.5">
             <div className="mb-1.5 flex items-center gap-2 text-brand-300">
               <Sparkles size={15} />
-              <span className="text-xs font-semibold">MVP Semana 1-2</span>
+              <span className="text-xs font-semibold">MVP Semana 5 · Demo Day</span>
             </div>
             <p className="text-[11px] leading-relaxed text-mist-500">
-              El modelo de IA responde con datos simulados. La integracion real
-              llega en la Semana 3.
+              Modelo de IA entrenado, recomendaciones y analiticas activas.
+              El indicador del encabezado muestra que motor responde ahora mismo.
             </p>
           </div>
 
           <button
             type="button"
+            onClick={() => setConfirmandoSalida(true)}
             className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-mist-500 transition-colors hover:bg-ink-800 hover:text-mist-100"
           >
             <LogOut size={18} />
@@ -109,6 +139,15 @@ export default function Sidebar({ abierto = false, onCerrar = () => {} }) {
           </button>
         </div>
       </aside>
+
+      <ConfirmDialog
+        abierto={confirmandoSalida}
+        titulo="¿Cerrar sesion?"
+        mensaje="Se borrara tu historial de busquedas guardado en este navegador. El contenido analizado se conserva en el servidor."
+        textoConfirmar="Cerrar sesion"
+        onConfirmar={cerrarSesion}
+        onCancelar={() => setConfirmandoSalida(false)}
+      />
     </>
   )
 }

@@ -16,6 +16,7 @@ import { SkeletonStat, Skeleton, Spinner } from '../components/Loaders'
 import AnalyticsPanel from '../components/AnalyticsPanel'
 import { useAnaliticas, useContenidos } from '../hooks/useContenidos'
 import { aPorcentaje, colorDeCategoria, formatearFecha } from '../data/categorias'
+import { nombreDePila } from '../data/usuario'
 
 const RADIO = 54
 const CIRCUNFERENCIA = 2 * Math.PI * RADIO
@@ -156,7 +157,7 @@ export default function Dashboard() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-mist-100">
-            Hola, Luis <span className="inline-block">👋</span>
+            Hola, {nombreDePila()} <span className="inline-block">👋</span>
           </h1>
           <p className="mt-1 text-sm text-mist-500">
             Este es el resumen de tu biblioteca de conocimiento tecnico.

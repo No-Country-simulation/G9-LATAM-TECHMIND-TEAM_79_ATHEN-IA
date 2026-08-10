@@ -8,14 +8,14 @@ Plataforma que recibe contenido técnico, lo clasifica con Inteligencia Artifici
 extrae palabras clave y devuelve métricas en formato JSON.
 
 [![Tests](https://img.shields.io/badge/tests-120%20passed-brightgreen)](docs/QA_TESTING_GUIDE.md)
-[![Coverage](https://img.shields.io/badge/coverage-96%25-brightgreen)](docs/QA_TESTING_GUIDE.md)
+[![Coverage](https://img.shields.io/badge/coverage-96.72%25-brightgreen)](docs/QA_TESTING_GUIDE.md)
 [![Backend](https://img.shields.io/badge/backend-FastAPI-009688?logo=fastapi&logoColor=white)](backend/)
 [![Frontend](https://img.shields.io/badge/frontend-React%2019-61DAFB?logo=react&logoColor=black)](frontend/)
 [![Python](https://img.shields.io/badge/python-3.13-3776AB?logo=python&logoColor=white)](backend/requirements.txt)
 [![Scikit-Learn](https://img.shields.io/badge/ML-scikit--learn-F7931E?logo=scikitlearn&logoColor=white)](backend/models/README.md)
 [![Tailwind](https://img.shields.io/badge/styles-Tailwind%20v4-06B6D4?logo=tailwindcss&logoColor=white)](frontend/src/index.css)
 [![Docker](https://img.shields.io/badge/docker-ready-2496ED?logo=docker&logoColor=white)](backend/Dockerfile)
-[![Status](https://img.shields.io/badge/MVP-Semana%204-8b5cf6)]()
+[![Status](https://img.shields.io/badge/MVP-Semana%205%20·%20Demo%20Day-8b5cf6)]()
 
 Hackathon **ONE Alura + Oracle** / **No Country** — Generación 9
 
@@ -37,6 +37,7 @@ Hackathon **ONE Alura + Oracle** / **No Country** — Generación 9
 - [Docker](#-docker)
 - [Variables de entorno](#-variables-de-entorno)
 - [Integración del modelo de IA](#-integración-del-modelo-de-ia)
+- [Documentación del proyecto](#-documentación-del-proyecto)
 - [Roadmap](#-roadmap)
 
 ---
@@ -67,9 +68,9 @@ y la vista de **búsqueda en tiempo real**.
 |------|-------------|
 | **Frontend** | React 19 · Vite 8 · Tailwind CSS v4 · React Router 7 · Axios · Lucide React |
 | **Backend** | Python 3.13 · FastAPI · Uvicorn · Pydantic v2 |
-| **IA / Data Science** | Scikit-Learn · Pandas · TF-IDF *(integración Semana 3)* |
-| **QA** | Pytest · HTTPX · TestClient |
-| **Infraestructura** | Docker · Oracle Cloud Infrastructure (OCI) |
+| **IA / Data Science** | Scikit-Learn 1.6.1 · TF-IDF + MultinomialNB · joblib |
+| **QA** | Pytest · pytest-cov · HTTPX · TestClient · GitHub Actions |
+| **Infraestructura** | Docker · Docker Compose · Nginx · Oracle Cloud Infrastructure (OCI) |
 
 ---
 
@@ -77,45 +78,82 @@ y la vista de **búsqueda en tiempo real**.
 
 ```
 proyecto-mvp-hakaton/
-├── backend/
+│
+├── backend/                          FastAPI + modelo de IA
 │   ├── app/
-│   │   ├── __init__.py
-│   │   ├── config.py          # Variables de entorno, CORS, rutas OCI
-│   │   ├── main.py            # Rutas FastAPI y middleware
-│   │   ├── schemas.py         # ContenidoInput, AnalisisOutput, ErrorResponse
-│   │   └── services.py        # Clasificación, keywords, historial, fallback
+│   │   ├── main.py                   Composición de la app (119 líneas)
+│   │   ├── config.py                 Configuración por variables de entorno
+│   │   ├── schemas.py                Contratos Pydantic (Request/Response)
+│   │   ├── errors.py                 Manejo uniforme de errores HTTP
+│   │   ├── dependencies.py           Proveedores de Depends (inversión de dependencias)
+│   │   ├── services.py               Casos de uso + raíz de composición
+│   │   ├── recomendador.py           Motor de recomendaciones (Jaccard)
+│   │   │
+│   │   ├── domain/                   Abstracciones y reglas de negocio puras
+│   │   │   ├── protocols.py          Protocol: Clasificador, Repositorio, MotorRecomendaciones
+│   │   │   ├── taxonomia.py          Categorías, palabras clave, normalización
+│   │   │   └── similitud.py          Índice de Jaccard y puntaje combinado
+│   │   │
+│   │   ├── ml/                       Motores de clasificación
+│   │   │   ├── registro.py           Decide qué motor está activo (extension point)
+│   │   │   ├── reglas.py             Clasificador por palabras clave (fallback)
+│   │   │   ├── modelo.py             Envoltorio del artefacto entrenado
+│   │   │   ├── adaptador.py          Normaliza las 3 formas de entrega del .pkl
+│   │   │   └── carga.py              Localizar + deserializar + sondear
+│   │   │
+│   │   ├── repositories/
+│   │   │   └── memoria.py            Historial en memoria (Semana 5+: Oracle DB)
+│   │   │
+│   │   └── routers/                  Endpoints agrupados por área
+│   │       ├── salud.py              GET /, /salud, /categorias
+│   │       ├── contenido.py          POST /contenido, historial, recomendaciones
+│   │       └── analiticas.py         GET /analiticas
+│   │
 │   ├── models/
-│   │   ├── .gitkeep           # Aquí llega classifier.joblib (Data Science)
-│   │   └── README.md          # Guía de integración del modelo
-│   ├── tests/
-│   │   ├── conftest.py        # Fixtures compartidas, mocks y ciclo de vida de pruebas
-│   │   ├── test_api.py        # CP-01 a CP-113: Contrato, reglas de negocio y modelo ML (Propuesta 1)
-│   │   ├── test_integration.py# Propuesta 2: Pruebas de integración y flujo E2E
-│   │   ├── test_performance.py# Propuesta 3: Pruebas de carga, latencia y SLA en OCI
-│   │   └── test_resilience.py # Propuesta 4: Pruebas de resiliencia, casos borde y fallback
-│   ├── Dockerfile             # Imagen multi-stage python:3.13-slim
-│   ├── .dockerignore
+│   │   ├── clasificador_cursos.pkl   Artefacto entrenado (Pipeline TF-IDF + MultinomialNB)
+│   │   └── README.md                 Contrato del artefacto para Data Science
+│   │
+│   ├── tests/                        120 pruebas · 96.72% cobertura
+│   │   ├── conftest.py               Fixtures compartidas
+│   │   ├── test_api.py               Contrato, reglas de negocio y modelo ML
+│   │   ├── test_recomendaciones.py   CP-200…CP-222 (Semana 4)
+│   │   ├── test_analiticas.py        CP-230…CP-252 (Semana 4)
+│   │   ├── test_integration.py       Flujo E2E
+│   │   ├── test_performance.py       Latencia y SLA
+│   │   └── test_resilience.py        Casos borde y degradación
+│   │
+│   ├── Dockerfile                    Multi-stage python:3.13-slim
+│   ├── .env.example                  Plantilla de variables de entorno
 │   └── requirements.txt
 │
-├── frontend/
-│   ├── public/athenia.svg
+├── frontend/                         React 19 + Vite + Tailwind v4
 │   ├── src/
-│   │   ├── components/        # Sidebar, Header, StatCard, ContentForm…
-│   │   ├── pages/             # Dashboard, AgregarContenido, BuscarContenidos
-│   │   ├── hooks/             # useContenidos, useMetricas
-│   │   ├── services/api.js    # Cliente HTTP (único punto que conoce la API)
-│   │   ├── data/categorias.js # Colores y helpers de presentación
-│   │   ├── App.jsx
-│   │   └── index.css          # Tokens de branding (tema oscuro/morado)
-│   ├── .env.example
-│   └── vite.config.js         # Proxy /api -> localhost:8000
+│   │   ├── pages/                    Dashboard, AgregarContenido, BuscarContenidos, Categorias
+│   │   ├── components/               Sidebar, Header, ContentDetail, Recomendaciones,
+│   │   │                             AnalyticsPanel, SearchHistory, ConfirmDialog…
+│   │   ├── hooks/                    useContenidos, useAnaliticas, useRecomendaciones,
+│   │   │                             useHistorialBusquedas
+│   │   ├── services/api.js           Cliente HTTP (único punto que conoce la API)
+│   │   ├── data/                     categorias.js (colores), usuario.js (identidad)
+│   │   └── index.css                 Tokens de branding (tema oscuro/morado)
+│   │
+│   ├── Dockerfile                    Build con Node 24 → servido por Nginx
+│   ├── nginx.conf                    SPA routing + proxy /api → backend
+│   └── vite.config.js                Proxy /api → localhost:8000 (desarrollo)
 │
 ├── docs/
-│   └── QA_TESTING_GUIDE.md    # Guía completa de pruebas para QA
+│   ├── QA_TESTING_GUIDE.md                                 Guía completa para QA
+│   ├── GUIA_TECNICA_Y_PRESENTACION_SEMANA3.md              Arquitectura SOLID + ML
+│   ├── GUIA_EXPLICATIVA_SEMANA4_RECOMENDACIONES_Y_ANALITICAS.md
+│   └── PRESENTACION_EQUIPO_SEMANA4_5.md                    Guion del Demo Day
 │
-├── scripts/                   # Lanzadores multiplataforma (Windows/macOS/Linux)
+├── notebooks/EDA_Model_Training.ipynb   Entrenamiento (Data Science)
+├── Data/                                Dataset limpio
+├── scripts/                             Lanzadores multiplataforma
+├── .github/workflows/ci.yml             CI: pytest + umbral de cobertura 85%
+├── docker-compose.yml                   Stack completo (backend + frontend)
 ├── pytest.ini
-└── package.json               # Orquesta backend + frontend con un solo comando
+└── package.json                         Orquesta backend + frontend
 ```
 
 ---
@@ -212,19 +250,35 @@ npm run dev:backend
 npm run dev:frontend
 ```
 
-### Opción C — Comandos nativos (sin npm)
+### Opción C — Comandos nativos (uvicorn / vite, sin npm en la raíz)
 
-**Backend** (desde `backend/`, con el entorno virtual activado):
+**Backend** — desde `backend/`, con el entorno virtual activado:
 
 ```bash
 uvicorn app.main:app --reload --port 8000
 ```
 
-**Frontend** (desde `frontend/`):
+> Activar el entorno virtual primero:
+> Windows `..\.venv\Scripts\activate` · macOS/Linux `source ../.venv/bin/activate`
+
+**Frontend** — desde `frontend/`:
 
 ```bash
 npm run dev
 ```
+
+Vite arranca en el puerto 5173 y proxea `/api` hacia `http://127.0.0.1:8000`
+(configurado en `vite.config.js`), así que **no hace falta tocar CORS** ni
+definir `VITE_API_URL` en desarrollo.
+
+### Opción D — Docker Compose (igual que en producción)
+
+```bash
+docker compose up --build
+```
+
+Levanta el stack completo tal y como corre en OCI: el frontend servido por
+Nginx en el puerto 8080, con `/api` proxeado al backend por la red interna.
 
 ### Scripts disponibles
 
@@ -233,9 +287,19 @@ npm run dev
 | `npm run dev` | Backend + Frontend simultáneamente |
 | `npm run dev:backend` | Solo la API FastAPI |
 | `npm run dev:frontend` | Solo la aplicación React |
-| `npm test` | Suite de pruebas Pytest |
+| `npm test` | Suite de pruebas Pytest con reporte de cobertura |
 | `npm run build` | Build de producción del frontend |
 | `npm run install:all` | Instala dependencias de Node en raíz y frontend |
+
+### Verificar que todo arrancó bien
+
+```bash
+curl http://localhost:8000/salud
+```
+
+Debe responder `"motor": "modelo_ml_real"`. Si dice `"clasificador_reglas"`,
+el modelo no se cargó — revisa que exista `backend/models/clasificador_cursos.pkl`
+y consulta los logs del backend, que indican en qué etapa falló.
 
 ---
 
@@ -404,8 +468,58 @@ Filtrar por grupo de casos:
 pytest -k "validacion or historial"
 ```
 
-**Estado actual: 73 pruebas en verde** — contrato del Hackathon, validaciones,
-historial, métricas, CORS, integración del modelo ML real y mecanismo de fallback.
+### Estado actual: 120 pruebas en verde · 96.72% de cobertura
+
+La cobertura se mide en cada ejecución (`pytest.ini` incluye
+`--cov-fail-under=85`), así que **la suite falla si baja del 85%**. Es la misma
+regla que aplica el pipeline de CI.
+
+```
+Name                                   Stmts   Miss  Cover
+--------------------------------------------------------------------
+backend/app/__init__.py                    1      0   100%
+backend/app/config.py                     46      4    91%
+backend/app/dependencies.py               11      0   100%
+backend/app/domain/protocols.py           43      0   100%
+backend/app/domain/similitud.py           33      0   100%
+backend/app/domain/taxonomia.py           26      0   100%
+backend/app/errors.py                     29      2    93%
+backend/app/main.py                       36      1    97%
+backend/app/ml/adaptador.py               50      0   100%
+backend/app/ml/carga.py                   63      4    94%
+backend/app/ml/modelo.py                  44      2    95%
+backend/app/ml/registro.py                30      3    90%
+backend/app/ml/reglas.py                  38      0   100%
+backend/app/recomendador.py               24      0   100%
+backend/app/repositories/memoria.py       45      1    98%
+backend/app/routers/analiticas.py         10      0   100%
+backend/app/routers/contenido.py          39      0   100%
+backend/app/routers/salud.py              16      0   100%
+backend/app/schemas.py                   110      1    99%
+backend/app/services.py                   64      7    89%
+--------------------------------------------------------------------
+TOTAL                                    762     25    97%
+
+Required test coverage of 85% reached. Total coverage: 96.72%
+============================= 120 passed in 2.81s =============================
+```
+
+**Qué cubre la suite:**
+
+| Grupo | Casos | Qué valida |
+|-------|-------|------------|
+| Contrato del Hackathon | CP-01…CP-40 | `POST /contenido`, validaciones 422, CORS |
+| Historial y métricas | CP-50…CP-81 | Filtros, detalle, agregados |
+| Integración ML | CP-90…CP-113 | Modelo real, formatos de artefacto, fallback |
+| Arquitectura SOLID | CP-106, CP-107 | OCP y DIP verificados en ejecución |
+| Recomendaciones | CP-200…CP-222 | Jaccard, ranking, evidencia, motor sustituible |
+| Analíticas | CP-230…CP-252 | Distribuciones, regresión de `/metricas` |
+
+Reporte navegable en HTML:
+
+```bash
+pytest --cov-report=html
+```
 
 📖 Guía detallada para QA: [`docs/QA_TESTING_GUIDE.md`](docs/QA_TESTING_GUIDE.md)
 
@@ -413,24 +527,48 @@ historial, métricas, CORS, integración del modelo ML real y mecanismo de fallb
 
 ## 🐳 Docker
 
-Construir y ejecutar el backend en contenedor:
+### Stack completo (recomendado)
+
+Levanta backend + frontend con una sola orden, desde la raíz:
+
+```bash
+docker compose up --build
+```
+
+| Servicio | URL |
+|----------|-----|
+| Frontend (Nginx) | http://localhost:8080 |
+| API vía Nginx | http://localhost:8080/api/salud |
+| API directa (Swagger) | http://localhost:8000/docs |
+
+Parar y limpiar:
+
+```bash
+docker compose down
+```
+
+**Cómo se comunican:** el frontend llama a rutas relativas (`/api/...`) y Nginx
+las proxea al backend por la red interna de Docker. El navegador nunca hace
+peticiones cross-origin, así que no hay CORS que configurar ni riesgo de
+contenido mixto (HTTPS → HTTP) al desplegar en OCI.
+
+### Servicios por separado
 
 ```bash
 docker build -t athenia-backend:latest ./backend
 ```
 
 ```bash
-docker run -p 8000:8000 --name athenia-api athenia-backend:latest
+docker build -t athenia-frontend:latest ./frontend
 ```
 
-Con el modelo entrenado montado desde el host:
+La imagen del backend usa `python:3.13-slim`, build multi-stage, usuario sin
+privilegios y `HEALTHCHECK` contra `/salud`. **Incluye el modelo entrenado**
+(`clasificador_cursos.pkl`), así que el contenedor arranca con el motor real,
+no con el fallback.
 
-```bash
-docker run -p 8000:8000 -v "$(pwd)/backend/models:/app/models:ro" athenia-backend:latest
-```
-
-La imagen usa `python:3.13-slim`, build multi-stage, usuario sin privilegios y un
-`HEALTHCHECK` que consulta `/salud`.
+La del frontend compila con Node 24 y sirve los estáticos con Nginx, con SPA
+routing (`try_files`) para que recargar `/buscar` no dé 404.
 
 ---
 
@@ -526,15 +664,39 @@ Sirven tanto `joblib.dump` como `pickle.dump`.
 
 ---
 
+## 📚 Documentación del proyecto
+
+| Documento | Para quién | Qué contiene |
+|-----------|-----------|--------------|
+| [`docs/QA_TESTING_GUIDE.md`](docs/QA_TESTING_GUIDE.md) | QA | Catálogo de los 120 casos, fixtures, checklist manual de UI y troubleshooting |
+| [`docs/GUIA_TECNICA_Y_PRESENTACION_SEMANA3.md`](docs/GUIA_TECNICA_Y_PRESENTACION_SEMANA3.md) | Backend / Arquitectura | Arquitectura SOLID, integración del modelo ML y mecanismo de fallback |
+| [`docs/GUIA_EXPLICATIVA_SEMANA4_RECOMENDACIONES_Y_ANALITICAS.md`](docs/GUIA_EXPLICATIVA_SEMANA4_RECOMENDACIONES_Y_ANALITICAS.md) | Full Stack | Jaccard paso a paso, flujo de analíticas y debounce del historial |
+| [`docs/PRESENTACION_EQUIPO_SEMANA4_5.md`](docs/PRESENTACION_EQUIPO_SEMANA4_5.md) | Todo el equipo | Guion diapositiva por diapositiva para el Demo Day |
+| [`backend/models/README.md`](backend/models/README.md) | Data Science | Contrato del artefacto, formatos aceptados y versiones |
+
+---
+
 ## 🗺️ Roadmap
 
 | Semana | Objetivo | Estado |
 |--------|----------|--------|
 | 1 | Descubrimiento, arquitectura y plan de trabajo | ✅ |
 | 2 | Frontend base + API mock + suite de pruebas | ✅ |
-| 3 | Integración del modelo de IA real + Oracle DB | 🔜 |
-| 4 | Recomendaciones, dashboard analítico y mejoras UX | 🔜 |
-| 5 | Pulido, despliegue en OCI y Demo Day | 🔜 |
+| 3 | Integración del modelo de IA real + refactor SOLID | ✅ |
+| 4 | Recomendaciones, dashboard analítico y mejoras UX | ✅ |
+| 5 | Pulido, documentación, Docker Compose y Demo Day | ✅ |
+
+### Pendiente tras el MVP
+
+Se documenta explícitamente lo que **no** está resuelto, para que nadie lo
+descubra en producción:
+
+| Tema | Estado actual | Siguiente paso |
+|------|---------------|----------------|
+| **Persistencia** | El historial vive en memoria y se pierde al reiniciar el contenedor | Implementar `RepositorioOracle` contra Autonomous Database cumpliendo el `Protocol` existente |
+| **Autenticación** | No hay login; "Cerrar sesión" solo limpia datos locales del navegador | Añadir OAuth/JWT y proteger los endpoints de escritura |
+| **CORS** | Por defecto `*`; en `docker-compose.yml` ya va restringido | Enumerar dominios reales en la variable `ATHENIA_CORS_ORIGINS` |
+| **Notificaciones** | Botón deshabilitado en la UI | Fuera del alcance del MVP |
 
 ---
 

@@ -43,6 +43,21 @@ function escribirEnStorage(entradas) {
   }
 }
 
+/**
+ * Borra el historial persistido, sin necesidad de un componente React.
+ *
+ * La usa "Cerrar sesion" desde el Sidebar: al no ser un hook, puede llamarse
+ * desde cualquier handler. Los componentes que tengan el hook montado releen
+ * el storage la proxima vez que se monten.
+ */
+export function limpiarHistorialBusquedas() {
+  try {
+    window.localStorage.removeItem(CLAVE)
+  } catch {
+    // Sin storage no habia nada que borrar.
+  }
+}
+
 export function useHistorialBusquedas() {
   // Inicializador perezoso: `leerDeStorage` corre una sola vez, no en cada render.
   const [entradas, setEntradas] = useState(leerDeStorage)
