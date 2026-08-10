@@ -3,7 +3,7 @@
 > Documento dirigido al **QA Tester** del equipo.
 > Explica qué se está probando, por qué, cómo ejecutarlo y qué hacer cuando algo falla.
 
-**Estado actual: 48 pruebas automatizadas, todas en verde.**
+**Estado actual: 73 pruebas automatizadas, todas en verde.**
 
 ---
 
@@ -135,7 +135,10 @@ def test_salud_responde_200(client):
 | `CP-50` … `CP-58` | `GET /contenidos` — historial |
 | `CP-60` … `CP-63` | Detalle y borrado del historial |
 | `CP-70` … `CP-73` | `GET /metricas` — Dashboard |
-| `CP-80` … `CP-81` | Mecanismo de fallback del modelo |
+| `CP-80` … `CP-81` | Metadatos y estado por defecto |
+| `CP-90` … `CP-99` | Integración del modelo ML (pipeline entrenado al vuelo) |
+| `CP-100` … `CP-105` | Resiliencia del mecanismo de fallback |
+| `CP-110` … `CP-113` | Artefacto **real** de Data Science |
 
 ---
 
@@ -224,16 +227,58 @@ def test_salud_responde_200(client):
 | CP-72 | Distribución consistente | La suma de `cantidad` iguala `total_cursos`; cada `porcentaje` entre 0 y 100 |
 | CP-73 | Confianza promedio | Valor entre 0 y 1 |
 
-### 4.9 Mecanismo de fallback
+### 4.9 Estado por defecto y metadatos
 
 | ID | Caso | Resultado esperado |
 |----|------|--------------------|
-| CP-80 | Sin `classifier.joblib` | `es_mock == true` y `modelo_cargado == "reglas-keywords-v1"` |
+| CP-80 | Sin artefacto en `backend/models/` | `motor == "clasificador_reglas"`, `es_mock == true` |
 | CP-81 | Metadatos opcionales | `origen` y `url` se guardan y se recuperan en el detalle |
 
-> **CP-80 es clave para la demo:** garantiza que la API responde aunque el modelo de
-> Data Science no esté disponible. Cuando el modelo llegue, este caso debe
-> actualizarse para esperar `es_mock == false`.
+### 4.10 Integración del modelo ML — `CP-90` … `CP-99`
+
+Estas pruebas **entrenan un `Pipeline` real de scikit-learn al vuelo** (TF-IDF +
+regresión logística sobre un corpus mínimo) y lo serializan igual que lo hace
+Data Science. No dependen de que el `.pkl` de producción esté presente, pero
+ejercitan exactamente el mismo camino de carga, adaptación e inferencia.
+
+| ID | Caso | Resultado esperado |
+|----|------|--------------------|
+| CP-90 | Artefacto presente | `motor == "modelo_ml_real"`, `detalle_modelo == "Pipeline"` |
+| CP-91 | La predicción viene del modelo | Categoría del modelo y `modelo == "clasificador_cursos.pkl"` |
+| CP-92 | Contrato intacto | Las tres claves del Hackathon no cambian con el motor ML |
+| CP-93 | Clases del modelo | `GET /categorias` devuelve `classes_` del artefacto |
+| CP-94 | Validación con ML activo | Payloads inválidos siguen dando 422 |
+| CP-95 | Texto mínimo | Una sola palabra no rompe la inferencia |
+| CP-96 | joblib y pickle *(2 variantes)* | Carga con cualquiera de los dos formatos |
+| CP-97 | Vectorizador separado *(4 variantes)* | `dict` es/en, `tuple` y `list` se recomponen |
+| CP-98 | Autodetección por nombre | Sin `ATHENIA_MODELO_PATH` encuentra el archivo en la carpeta |
+| CP-99 | Probabilidad coherente | Coincide con el máximo de `predict_proba` |
+
+### 4.11 Resiliencia del fallback — `CP-100` … `CP-105`
+
+| ID | Caso | Resultado esperado |
+|----|------|--------------------|
+| CP-100 | `.pkl` corrupto | Degrada a reglas; la API sigue clasificando |
+| CP-101 | Objeto sin `.predict()` | Se rechaza el artefacto y se usa el fallback |
+| CP-102 | Ruta inexistente | `ATHENIA_MODELO_PATH` inválido no rompe el arranque |
+| CP-103 | Fallo de inferencia en caliente | Responde con reglas; `modelo` incluye `"fallback"` |
+| CP-104 | Sonda de carga | Un modelo sin su vectorizador se descarta antes de exponerse |
+| CP-105 | Categorías relacionadas | Salen de `predict_proba`, no se mezclan con la taxonomía de reglas |
+
+### 4.12 Artefacto real de Data Science — `CP-110` … `CP-113`
+
+Cargan el `clasificador_cursos.pkl` **real** del repositorio.
+
+> Se **saltan solas** si el archivo no está presente (los `.pkl` están en
+> `.gitignore` y se distribuyen por OCI Object Storage). Si el archivo existe
+> pero no se activa, la prueba **falla** — eso sí es un problema real.
+
+| ID | Caso | Resultado esperado |
+|----|------|--------------------|
+| CP-110 | Carga y activa el motor ML | `motor == "modelo_ml_real"` con el artefacto real |
+| CP-111 | Contrato del Hackathon | Se mantiene con el modelo de producción |
+| CP-112 | Predicciones dentro del catálogo | Toda categoría pertenece a `classes_` |
+| CP-113 | Texto con acentos y ñ | UTF-8 correcto de extremo a extremo |
 
 ---
 
@@ -245,9 +290,19 @@ de la función de prueba.
 | Fixture | Alcance | Qué entrega |
 |---------|---------|-------------|
 | `client` | sesión | `TestClient` de FastAPI. No requiere servidor levantado. |
+| `motor_por_reglas` | sesión (**autouse**) | Apunta la búsqueda de modelos a una carpeta vacía. Ver nota abajo. |
 | `historial_limpio` | función (**autouse**) | Vacía el historial antes y después de cada prueba. Se aplica sola. |
-| `payload_valido` | función | Payload de referencia — curso de Spring Boot que debe clasificar como `Backend`. |
-| `historial_poblado` | función | Crea tres análisis de categorías distintas (Backend, DevOps, Data Science) y devuelve sus respuestas. |
+| `payload_valido` | función | Payload de referencia — curso de Spring Boot. |
+| `historial_poblado` | función | Crea tres análisis de categorías distintas y devuelve sus respuestas. |
+| `modelo_ml_real` | función | Entrena un `Pipeline` de scikit-learn al vuelo y lo activa como `clasificador_cursos.pkl`. |
+| `activar_artefacto` | función | Fábrica: serializa cualquier objeto, lo activa y restaura el estado al final. |
+| `artefacto_real` | función | Activa el `.pkl` real del repositorio. Hace `skip` si no está presente. |
+
+> **Por qué existe `motor_por_reglas`:** sin él, las pruebas de clasificación
+> (CP-13 a CP-15) pasarían a evaluar la precisión del modelo de Data Science en
+> cuanto apareciera el `.pkl`, y romperían sin que nadie hubiera tocado el
+> backend. Forzando el motor por reglas, la suite mide **el backend**, no el
+> modelo. Las pruebas que sí necesitan el modelo lo montan explícitamente.
 
 Ejemplo:
 

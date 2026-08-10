@@ -4,7 +4,7 @@ import { Layers, AlertCircle } from 'lucide-react'
 import { Skeleton } from '../components/Loaders'
 import { useMetricas } from '../hooks/useContenidos'
 import { obtenerCategorias } from '../services/api'
-import { COLORES_CATEGORIA, estilosDeCategoria } from '../data/categorias'
+import { CATEGORIAS_REGLAS, estilosDeCategoria } from '../data/categorias'
 
 /**
  * Vista "Categorias".
@@ -36,7 +36,7 @@ export default function Categorias() {
       .catch(() => {
         if (!vigente) return
         setSinBackend(true)
-        setCatalogo(Object.keys(COLORES_CATEGORIA))
+        setCatalogo(CATEGORIAS_REGLAS)
       })
       .finally(() => {
         if (vigente) setCargandoCatalogo(false)

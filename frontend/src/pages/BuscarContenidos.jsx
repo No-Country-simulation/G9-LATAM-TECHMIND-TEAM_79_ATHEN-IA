@@ -3,12 +3,10 @@ import { useSearchParams } from 'react-router-dom'
 import { Search, X, SearchX, AlertCircle } from 'lucide-react'
 import CourseCard from '../components/CourseCard'
 import CategoryBadge from '../components/CategoryBadge'
-import { SkeletonGrid, Spinner } from '../components/Loaders'
-import { useContenidos } from '../hooks/useContenidos'
-import { COLORES_CATEGORIA } from '../data/categorias'
+import { SkeletonGrid, Spinner, Skeleton } from '../components/Loaders'
+import { useCategorias, useContenidos } from '../hooks/useContenidos'
 
 const FILTRO_TODOS = 'Todos'
-const CATEGORIAS = [FILTRO_TODOS, ...Object.keys(COLORES_CATEGORIA)]
 
 /**
  * Vista "Buscar Contenidos".
@@ -25,6 +23,9 @@ export default function BuscarContenidos() {
 
   const [consulta, setConsulta] = useState(consultaUrl)
   const [categoriaActiva, setCategoriaActiva] = useState(FILTRO_TODOS)
+
+  // Las categorias vienen del motor activo, no cableadas en el frontend.
+  const { categorias, cargando: cargandoCategorias } = useCategorias()
 
   // Mantiene el input sincronizado cuando la URL cambia desde el Header.
   useEffect(() => setConsulta(consultaUrl), [consultaUrl])
@@ -94,43 +95,42 @@ export default function BuscarContenidos() {
         </div>
       </div>
 
-      {/* --- Filtros por categoria --- */}
+      {/* --- Filtros por categoria (del motor activo) --- */}
       <div className="flex flex-wrap gap-2">
-        {CATEGORIAS.map((categoria) => {
-          const activa = categoria === categoriaActiva
+        <button
+          type="button"
+          onClick={() => setCategoriaActiva(FILTRO_TODOS)}
+          aria-pressed={categoriaActiva === FILTRO_TODOS}
+          className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+            categoriaActiva === FILTRO_TODOS
+              ? 'bg-brand-600 text-white'
+              : 'border border-ink-700 text-mist-300 hover:border-brand-500 hover:text-mist-100'
+          }`}
+        >
+          Todos
+        </button>
 
-          if (categoria === FILTRO_TODOS) {
-            return (
-              <button
-                key={categoria}
-                type="button"
-                onClick={() => setCategoriaActiva(categoria)}
-                aria-pressed={activa}
-                className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors ${
-                  activa
-                    ? 'bg-brand-600 text-white'
-                    : 'border border-ink-700 text-mist-300 hover:border-brand-500 hover:text-mist-100'
-                }`}
-              >
-                Todos
-              </button>
-            )
-          }
+        {cargandoCategorias
+          ? Array.from({ length: 5 }, (_, i) => (
+              <Skeleton key={i} className="h-[26px] w-28 rounded-lg" />
+            ))
+          : categorias.map((categoria) => {
+              const activa = categoria === categoriaActiva
 
-          return (
-            <button
-              key={categoria}
-              type="button"
-              onClick={() => setCategoriaActiva(activa ? FILTRO_TODOS : categoria)}
-              aria-pressed={activa}
-              className={`rounded-lg transition-opacity ${
-                activa ? 'ring-2 ring-brand-400' : 'opacity-70 hover:opacity-100'
-              }`}
-            >
-              <CategoryBadge categoria={categoria} />
-            </button>
-          )
-        })}
+              return (
+                <button
+                  key={categoria}
+                  type="button"
+                  onClick={() => setCategoriaActiva(activa ? FILTRO_TODOS : categoria)}
+                  aria-pressed={activa}
+                  className={`rounded-lg transition-opacity ${
+                    activa ? 'ring-2 ring-brand-400' : 'opacity-70 hover:opacity-100'
+                  }`}
+                >
+                  <CategoryBadge categoria={categoria} />
+                </button>
+              )
+            })}
       </div>
 
       {/* --- Estado de la consulta --- */}

@@ -1,5 +1,28 @@
+# =============================================================================
+# AthenIA - Backend (FastAPI)
+# Instalar con:  pip install -r backend/requirements.txt
+# =============================================================================
+
+# --- API ---------------------------------------------------------------------
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 pydantic==2.10.5
+
+# --- Modelo de IA ------------------------------------------------------------
+# Necesarios para deserializar y ejecutar el artefacto entrenado por Data
+# Science (backend/models/clasificador_cursos.pkl).
+#
+# IMPORTANTE: scikit-learn esta fijado en 1.6.1 porque es la version con la que
+# se entreno `clasificador_cursos.pkl` (Pipeline TfidfVectorizer + MultinomialNB).
+# Con 1.9.0 el artefacto carga pero sklearn emite InconsistentVersionWarning y
+# advierte de posibles resultados invalidos. Si Data Science reentrena con otra
+# version, actualizar este pin en el mismo commit.
+scikit-learn==1.6.1
+joblib==1.5.3
+numpy>=2.0.0
+pandas==3.0.5
+
+# --- Pruebas / QA ------------------------------------------------------------
 pytest==8.3.4
 httpx==0.28.1
+pytest-cov
