@@ -29,7 +29,7 @@ export default function StatCard({
           puntos suspensivos en vez de desbordar. */}
       <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-medium uppercase tracking-wide text-mist-500">
+          <p className="truncate text-xs font-medium uppercase tracking-wide text-mist-400">
             {etiqueta}
           </p>
           <p
@@ -38,7 +38,7 @@ export default function StatCard({
           >
             {valor}
           </p>
-          {variacion && <p className="mt-1 truncate text-xs text-mist-500">{variacion}</p>}
+          {variacion && <p className="mt-1 truncate text-xs text-mist-400">{variacion}</p>}
         </div>
 
         {Icono && (

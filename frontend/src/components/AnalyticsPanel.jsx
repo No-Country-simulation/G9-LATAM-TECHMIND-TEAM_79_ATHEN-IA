@@ -42,7 +42,7 @@ function BarrasDistribucion({ segmentos, colorDe, vacio }) {
             />
           </div>
 
-          <span className="w-8 shrink-0 text-right text-xs text-mist-500">
+          <span className="w-8 shrink-0 text-right text-xs text-mist-400">
             {segmento.cantidad}
           </span>
           <span className="w-12 shrink-0 text-right text-xs font-semibold text-mist-100">
@@ -105,7 +105,7 @@ function GraficoActividad({ puntos }) {
         />
       </svg>
 
-      <figcaption className="mt-2 flex justify-between text-[11px] text-mist-500">
+      <figcaption className="mt-2 flex justify-between text-[11px] text-mist-400">
         <span>{puntos[0].fecha}</span>
         <span>{puntos[puntos.length - 1].fecha}</span>
       </figcaption>

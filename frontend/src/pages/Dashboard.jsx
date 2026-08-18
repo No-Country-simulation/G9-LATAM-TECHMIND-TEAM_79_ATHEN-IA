@@ -115,7 +115,7 @@ function TopPalabrasClave({ palabras }) {
               style={{ width: `${(cantidad / maximo) * 100}%` }}
             />
           </div>
-          <span className="w-6 text-right text-xs text-mist-500">{cantidad}</span>
+          <span className="w-6 text-right text-xs text-mist-400">{cantidad}</span>
         </li>
       ))}
     </ul>
@@ -277,7 +277,7 @@ export default function Dashboard() {
                           <p className="truncate text-sm font-medium text-mist-100">
                             {contenido.titulo}
                           </p>
-                          <p className="text-xs text-mist-500">
+                          <p className="text-xs text-mist-400">
                             {formatearFecha(contenido.creado_en)}
                           </p>
                         </div>

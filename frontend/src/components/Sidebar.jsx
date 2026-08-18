@@ -2,10 +2,13 @@ import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   Home,
+  Library,
   PlusCircle,
   Search,
   LayoutGrid,
   Sparkles,
+  Bot,
+  Settings,
   LogOut,
   X,
 } from 'lucide-react'
@@ -13,12 +16,23 @@ import Logo from './Logo'
 import ConfirmDialog from './ConfirmDialog'
 import { limpiarHistorialBusquedas } from '../hooks/useHistorialBusquedas'
 
-/** Rutas de la navegacion principal. */
+/**
+ * Navegacion principal, en el orden del diseno de referencia.
+ *
+ * `Asistente IA` esta marcado como `enConstruccion`: la ruta existe y la vista
+ * explica con honestidad que la funcionalidad llega despues del MVP. Se deja
+ * visible —en vez de ocultarla— porque forma parte de la propuesta de producto,
+ * pero se distingue del resto para no prometer lo que aun no responde.
+ */
 const NAVEGACION = [
   { to: '/', etiqueta: 'Inicio', icono: Home, exacto: true },
+  { to: '/mis-cursos', etiqueta: 'Mis Cursos', icono: Library },
   { to: '/agregar', etiqueta: 'Agregar Curso', icono: PlusCircle },
   { to: '/buscar', etiqueta: 'Buscar', icono: Search },
   { to: '/categorias', etiqueta: 'Categorias', icono: LayoutGrid },
+  { to: '/recomendaciones', etiqueta: 'Recomendaciones', icono: Sparkles },
+  { to: '/asistente', etiqueta: 'Asistente IA', icono: Bot, enConstruccion: true },
+  { to: '/configuracion', etiqueta: 'Configuracion', icono: Settings },
 ]
 
 /**
@@ -84,7 +98,7 @@ export default function Sidebar({ abierto = false, onCerrar = () => {} }) {
               <p className="text-lg font-bold tracking-tight">
                 Athen<span className="text-brand-400">IA</span>
               </p>
-              <p className="text-[10px] uppercase tracking-widest text-mist-500">
+              <p className="text-[10px] uppercase tracking-widest text-mist-400">
                 Conocimiento Tecnico
               </p>
             </div>
@@ -101,11 +115,19 @@ export default function Sidebar({ abierto = false, onCerrar = () => {} }) {
         </div>
 
         {/* --- Enlaces --- */}
-        <nav className="flex flex-col gap-1">
-          {NAVEGACION.map(({ to, etiqueta, icono: Icono, exacto }) => (
+        <nav className="flex flex-col gap-1" aria-label="Secciones">
+          {NAVEGACION.map(({ to, etiqueta, icono: Icono, exacto, enConstruccion }) => (
             <NavLink key={to} to={to} end={exacto} className={claseEnlace} onClick={onCerrar}>
-              <Icono size={18} strokeWidth={2} />
-              {etiqueta}
+              <Icono size={18} strokeWidth={2} aria-hidden="true" />
+              <span className="flex-1 truncate">{etiqueta}</span>
+              {enConstruccion && (
+                <span
+                  className="rounded border border-ink-600 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-mist-400"
+                  title="Funcionalidad posterior al MVP"
+                >
+                  Pronto
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -123,7 +145,7 @@ export default function Sidebar({ abierto = false, onCerrar = () => {} }) {
               <Sparkles size={15} />
               <span className="text-xs font-semibold">MVP Semana 5 · Demo Day</span>
             </div>
-            <p className="text-[11px] leading-relaxed text-mist-500">
+            <p className="text-[11px] leading-relaxed text-mist-400">
               Modelo de IA entrenado, recomendaciones y analiticas activas.
               El indicador del encabezado muestra que motor responde ahora mismo.
             </p>

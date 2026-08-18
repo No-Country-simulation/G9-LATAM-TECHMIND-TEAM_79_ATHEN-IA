@@ -120,7 +120,7 @@ export default function ContentDetail({ contenido, onCerrar, onAbrirOtro }) {
             <h2 id="titulo-detalle" className="text-base font-semibold leading-snug text-mist-100">
               {contenido.titulo}
             </h2>
-            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-mist-500">
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-mist-400">
               <span>{contenido.origen || 'Sin origen'}</span>
               {contenido.creado_en && (
                 <>
@@ -148,14 +148,14 @@ export default function ContentDetail({ contenido, onCerrar, onAbrirOtro }) {
           {/* --- Clasificación --- */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-mist-500">
+              <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-mist-400">
                 Categoría
               </p>
               <CategoryBadge categoria={contenido.categoria} tamano="lg" conIcono />
             </div>
 
             <div>
-              <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-mist-500">
+              <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-mist-400">
                 <Gauge size={12} aria-hidden="true" />
                 Confianza
               </p>
@@ -184,7 +184,7 @@ export default function ContentDetail({ contenido, onCerrar, onAbrirOtro }) {
           {/* --- Palabras clave --- */}
           {contenido.informacion_adicional?.length > 0 && (
             <div>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-mist-500">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-mist-400">
                 Palabras clave detectadas
               </p>
               <ul className="flex flex-wrap gap-2">
@@ -200,7 +200,7 @@ export default function ContentDetail({ contenido, onCerrar, onAbrirOtro }) {
           {/* --- Texto original --- */}
           {contenido.texto && (
             <div>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-mist-500">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-mist-400">
                 Contenido analizado
               </p>
               <p className="max-h-48 overflow-y-auto rounded-xl border border-ink-700 bg-ink-900 p-3.5 text-sm leading-relaxed text-mist-300">

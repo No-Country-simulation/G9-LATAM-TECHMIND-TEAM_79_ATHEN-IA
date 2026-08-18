@@ -30,7 +30,7 @@ export default function CategoryBadge({
       {conIcono && <Layers size={tamano === 'lg' ? 15 : 12} />}
       {categoria}
       {confianza != null && (
-        <span className="opacity-70">· {aPorcentaje(confianza)}%</span>
+        <span className="opacity-85">· {aPorcentaje(confianza)}%</span>
       )}
     </span>
   )

@@ -11,7 +11,7 @@ function BarraConfianza({ probabilidad, color }) {
   return (
     <div>
       <div className="mb-1.5 flex items-baseline justify-between">
-        <span className="text-xs font-medium uppercase tracking-wide text-mist-500">
+        <span className="text-xs font-medium uppercase tracking-wide text-mist-400">
           Confianza del modelo
         </span>
         <span className="text-sm font-bold text-mist-100">{porcentaje}%</span>
@@ -86,7 +86,7 @@ export default function AnalysisResult({
           </p>
         </div>
         {id != null && (
-          <span className="shrink-0 rounded-lg border border-ink-700 px-2 py-1 text-[11px] text-mist-500">
+          <span className="shrink-0 rounded-lg border border-ink-700 px-2 py-1 text-[11px] text-mist-400">
             #{id}
           </span>
         )}
@@ -106,7 +106,7 @@ export default function AnalysisResult({
             <AlertTriangle size={17} className="mt-0.5 shrink-0 text-amber-400" aria-hidden="true" />
             <div>
               <p className="text-sm font-medium text-amber-100">Confianza baja</p>
-              <p className="mt-0.5 text-xs leading-relaxed text-amber-200/80">
+              <p className="mt-0.5 text-xs leading-relaxed text-amber-100">
                 El modelo no encontro senales claras en este texto. Revisa la
                 categoria antes de darla por buena, o agrega mas detalle tecnico
                 al contenido.
@@ -118,7 +118,7 @@ export default function AnalysisResult({
         {/* --- Categoria principal + confianza --- */}
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
-            <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-mist-500">
+            <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-mist-400">
               Categoria principal
             </p>
             <CategoryBadge categoria={categoria} tamano="lg" conIcono />
@@ -133,7 +133,7 @@ export default function AnalysisResult({
 
         {/* --- Palabras clave --- */}
         <div>
-          <p className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-mist-500">
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-mist-400">
             <Tag size={13} />
             Palabras clave detectadas
           </p>
@@ -156,7 +156,7 @@ export default function AnalysisResult({
         {/* --- Resumen --- */}
         {resumen && (
           <div>
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-mist-500">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-mist-400">
               Descripcion analizada
             </p>
             <p className="rounded-xl border border-ink-700 bg-ink-900 p-3.5 text-sm leading-relaxed text-mist-300">
@@ -168,7 +168,7 @@ export default function AnalysisResult({
         {/* --- Categorias relacionadas --- */}
         {relacionadas.length > 0 && (
           <div>
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-mist-500">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-mist-400">
               Categorias relacionadas
             </p>
             <ul className="flex flex-wrap gap-2">
@@ -183,7 +183,7 @@ export default function AnalysisResult({
 
         {/* --- Acciones --- */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ink-700 pt-5">
-          <p className="text-[11px] text-mist-500">
+          <p className="text-[11px] text-mist-400">
             Procesado por <span className="text-mist-300">{modelo ?? 'AthenIA'}</span>
           </p>
 

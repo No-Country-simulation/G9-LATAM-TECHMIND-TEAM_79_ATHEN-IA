@@ -187,6 +187,19 @@ def _construir_piezas_sueltas():
 
 
 @pytest.fixture
+def constructor_pipeline():
+    """
+    Devuelve la fabrica que entrena un `Pipeline` real de scikit-learn.
+
+    Se expone como fixture (y no se importa `from conftest import ...`) porque
+    ese import solo funciona si `backend/tests` esta en `sys.path`, lo que
+    depende de como se invoque pytest. Un fixture funciona siempre.
+    """
+    pytest.importorskip("sklearn", reason="scikit-learn es necesario para las pruebas de ML")
+    return _construir_pipeline
+
+
+@pytest.fixture
 def activar_artefacto():
     """
     Fabrica que serializa un artefacto, lo activa y restaura el estado al final.

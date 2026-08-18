@@ -58,7 +58,7 @@ function EstadoBackend() {
     <div className="hidden items-center gap-2 md:flex" title={detalle}>
       <div className="flex items-center gap-2 rounded-full border border-ink-700 bg-ink-850 px-3 py-1.5">
         <span className={`h-2 w-2 rounded-full ${colores[estado]}`} />
-        <span className="text-xs text-mist-500">{etiquetas[estado]}</span>
+        <span className="text-xs text-mist-400">{etiquetas[estado]}</span>
       </div>
 
       {/* Distingue de un vistazo si responde el modelo entrenado o el fallback. */}
@@ -146,7 +146,7 @@ export default function Header({ onAbrirMenu = () => {}, usuario = USUARIO_DEMO.
           </span>
           <div className="hidden leading-tight sm:block">
             <p className="text-xs font-semibold text-mist-100">{usuario}</p>
-            <p className="text-[10px] text-mist-500">{USUARIO_DEMO.rol}</p>
+            <p className="text-[10px] text-mist-400">{USUARIO_DEMO.rol}</p>
           </div>
         </div>
       </div>

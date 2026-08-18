@@ -34,7 +34,7 @@ export default function Recomendaciones({
           Contenido relacionado
         </h3>
         {estrategia && !cargando && (
-          <span className="hidden text-[11px] text-mist-500 sm:inline" title="Motor de recomendación">
+          <span className="hidden text-[11px] text-mist-400 sm:inline" title="Motor de recomendación">
             {estrategia}
           </span>
         )}
@@ -79,7 +79,7 @@ export default function Recomendaciones({
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                       <CategoryBadge categoria={item.categoria} tamano="sm" />
                       {item.origen && (
-                        <span className="text-[11px] text-mist-500">{item.origen}</span>
+                        <span className="text-[11px] text-mist-400">{item.origen}</span>
                       )}
                     </div>
                   </div>
@@ -107,7 +107,7 @@ export default function Recomendaciones({
 
                 {/* La evidencia: por que se recomendo este contenido. */}
                 {item.palabras_compartidas?.length > 0 && (
-                  <p className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px] text-mist-500">
+                  <p className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px] text-mist-400">
                     <Link2 size={11} aria-hidden="true" />
                     <span>Comparten:</span>
                     {item.palabras_compartidas.slice(0, 4).map((palabra) => (

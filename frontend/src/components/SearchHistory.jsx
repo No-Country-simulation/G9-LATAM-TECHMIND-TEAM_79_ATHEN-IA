@@ -19,7 +19,7 @@ export default function SearchHistory({ entradas = [], onSeleccionar, onEliminar
     <section aria-labelledby="titulo-historial" className="flex flex-wrap items-center gap-2">
       <h2
         id="titulo-historial"
-        className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-mist-500"
+        className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-mist-400"
       >
         <History size={13} aria-hidden="true" />
         Búsquedas recientes
@@ -55,7 +55,7 @@ export default function SearchHistory({ entradas = [], onSeleccionar, onEliminar
       <button
         type="button"
         onClick={onLimpiar}
-        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-mist-500 transition-colors hover:text-rose-300"
+        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-mist-400 transition-colors hover:text-rose-300"
       >
         <Trash2 size={12} aria-hidden="true" />
         Limpiar

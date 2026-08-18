@@ -35,7 +35,7 @@ export default function CourseCard({ contenido, onVer }) {
 
         <div className="min-w-0 flex-1">
           <h3 className="text-sm font-semibold leading-snug text-mist-100">{titulo}</h3>
-          <p className="mt-0.5 flex items-center gap-1.5 text-xs text-mist-500">
+          <p className="mt-0.5 flex items-center gap-1.5 text-xs text-mist-400">
             {origen || 'Sin origen'}
             {creadoEn && (
               <>
@@ -65,13 +65,13 @@ export default function CourseCard({ contenido, onVer }) {
         {palabrasClave.slice(0, 3).map((palabra) => (
           <li
             key={palabra}
-            className="rounded-lg border border-ink-700 px-2 py-0.5 text-[11px] text-mist-500"
+            className="rounded-lg border border-ink-700 px-2 py-0.5 text-[11px] text-mist-400"
           >
             {palabra}
           </li>
         ))}
         {palabrasClave.length > 3 && (
-          <li className="px-1 py-0.5 text-[11px] text-mist-500">
+          <li className="px-1 py-0.5 text-[11px] text-mist-400">
             +{palabrasClave.length - 3}
           </li>
         )}

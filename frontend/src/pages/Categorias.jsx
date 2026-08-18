@@ -91,7 +91,7 @@ export default function Categorias() {
 
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-mist-100">{categoria}</p>
-                    <p className="text-xs text-mist-500">
+                    <p className="text-xs text-mist-400">
                       {cantidad} contenido{cantidad === 1 ? '' : 's'} en tu biblioteca
                     </p>
                   </div>

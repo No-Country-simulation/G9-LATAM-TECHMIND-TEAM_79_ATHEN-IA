@@ -35,9 +35,14 @@ from .modelo import ClasificadorML
 
 logger = logging.getLogger("athenia.ml.carga")
 
-# Nombres que se buscan en `MODELOS_DIR`, en orden de preferencia. El primero
-# es el acordado con Data Science para la Semana 3; los demas se mantienen por
-# compatibilidad con entregas anteriores.
+# Extensiones que se consideran un artefacto de modelo.
+EXTENSIONES_ARTEFACTO = ("*.pkl", "*.joblib")
+
+# Nombres conocidos, en orden de preferencia. Ya NO deciden por si solos cual
+# se carga (eso lo hace la fecha de modificacion): sirven como desempate
+# determinista cuando dos artefactos tienen la misma marca temporal, algo
+# habitual tras un `git clone` o un `docker build`, donde todos los archivos
+# quedan con un mtime casi identico.
 NOMBRES_ARTEFACTO = (
     "clasificador_cursos.pkl",
     "clasificador_cursos.joblib",
@@ -50,14 +55,56 @@ NOMBRES_ARTEFACTO = (
 TEXTO_SONDA = "Curso de introduccion a Python y analisis de datos."
 
 
+def _prioridad_por_nombre(ruta: Path) -> int:
+    """
+    Posicion del archivo en `NOMBRES_ARTEFACTO` (menor = mas preferido).
+
+    Los nombres desconocidos van al final. Solo se usa como desempate cuando
+    dos artefactos comparten marca temporal.
+    """
+    try:
+        return NOMBRES_ARTEFACTO.index(ruta.name)
+    except ValueError:
+        return len(NOMBRES_ARTEFACTO)
+
+
+def artefactos_disponibles() -> list[Path]:
+    """
+    Todos los artefactos de la carpeta de modelos, del mas nuevo al mas viejo.
+
+    Empata por el orden de `NOMBRES_ARTEFACTO` y, en ultima instancia, por
+    nombre alfabetico: la seleccion nunca depende del orden en que el sistema
+    de archivos devuelva las entradas.
+    """
+    directorio = settings.MODELOS_DIR
+    if not directorio.is_dir():
+        return []
+
+    encontrados: list[Path] = []
+    for patron in EXTENSIONES_ARTEFACTO:
+        encontrados.extend(directorio.glob(patron))
+
+    return sorted(
+        encontrados,
+        key=lambda p: (-p.stat().st_mtime, _prioridad_por_nombre(p), p.name),
+    )
+
+
 def localizar_modelo() -> Optional[Path]:
     """
-    Encuentra el artefacto entrenado.
+    Encuentra el artefacto entrenado que debe cargarse.
 
     Orden de busqueda:
       1. `ATHENIA_MODELO_PATH`, si esta definido y el archivo existe.
-      2. Los nombres conocidos dentro de `ATHENIA_MODELOS_DIR`.
-      3. Cualquier `.pkl` o `.joblib` de esa carpeta (el mas reciente).
+      2. El artefacto **mas reciente** de `ATHENIA_MODELOS_DIR`.
+
+    Por que gana la fecha y no el nombre
+    -------------------------------------
+    Antes se recorria `NOMBRES_ARTEFACTO` y se tomaba el primero que existiera.
+    Eso hacia que un modelo nuevo entregado con otro nombre —el caso tipico,
+    `clasificador_v2.pkl` junto al anterior— **quedara ignorado en silencio**:
+    la API seguia sirviendo el viejo sin ningun aviso. Al ordenar por fecha de
+    modificacion, dejar el artefacto nuevo en la carpeta basta para activarlo.
 
     Devuelve `None` si no hay ningun artefacto disponible.
     """
@@ -70,29 +117,29 @@ def localizar_modelo() -> Optional[Path]:
         )
         return None
 
-    directorio = settings.MODELOS_DIR
-    if not directorio.is_dir():
+    disponibles = artefactos_disponibles()
+    if not disponibles:
         return None
 
-    for nombre in NOMBRES_ARTEFACTO:
-        candidato = directorio / nombre
-        if candidato.exists():
-            return candidato
+    elegido = disponibles[0]
 
-    # Red de seguridad: si Data Science entrega otro nombre, igual se detecta.
-    sueltos = sorted(
-        [*directorio.glob("*.pkl"), *directorio.glob("*.joblib")],
-        key=lambda p: p.stat().st_mtime,
-        reverse=True,
-    )
-    if sueltos:
+    if len(disponibles) > 1:
+        # Con varios artefactos conviene dejar constancia de cual gano: si la
+        # demo responde con un modelo inesperado, el log lo explica.
+        logger.info(
+            "%d artefactos en %s. Se carga el mas reciente: %s (descartados: %s)",
+            len(disponibles),
+            settings.MODELOS_DIR,
+            elegido.name,
+            ", ".join(p.name for p in disponibles[1:]),
+        )
+    elif elegido.name not in NOMBRES_ARTEFACTO:
         logger.warning(
             "Artefacto con nombre no estandar: %s. Se usara de todos modos.",
-            sueltos[0].name,
+            elegido.name,
         )
-        return sueltos[0]
 
-    return None
+    return elegido
 
 
 def _deserializar(ruta: Path):

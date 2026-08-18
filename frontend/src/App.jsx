@@ -3,9 +3,13 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
 import Header from './components/Header'
 import Dashboard from './pages/Dashboard'
+import MisCursos from './pages/MisCursos'
 import AgregarContenido from './pages/AgregarContenido'
 import BuscarContenidos from './pages/BuscarContenidos'
 import Categorias from './pages/Categorias'
+import Recomendaciones from './pages/Recomendaciones'
+import AsistenteIA from './pages/AsistenteIA'
+import Configuracion from './pages/Configuracion'
 
 /** Pantalla 404. */
 function NoEncontrado() {
@@ -39,9 +43,13 @@ export default function App() {
             <div className="mx-auto max-w-7xl">
               <Routes>
                 <Route path="/" element={<Dashboard />} />
+                <Route path="/mis-cursos" element={<MisCursos />} />
                 <Route path="/agregar" element={<AgregarContenido />} />
                 <Route path="/buscar" element={<BuscarContenidos />} />
                 <Route path="/categorias" element={<Categorias />} />
+                <Route path="/recomendaciones" element={<Recomendaciones />} />
+                <Route path="/asistente" element={<AsistenteIA />} />
+                <Route path="/configuracion" element={<Configuracion />} />
                 <Route path="*" element={<NoEncontrado />} />
               </Routes>
             </div>

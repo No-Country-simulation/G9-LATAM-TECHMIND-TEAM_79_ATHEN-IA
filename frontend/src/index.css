@@ -21,9 +21,14 @@
   --color-brand-600: #7c3aed;
   --color-brand-700: #6d28d9;
 
-  /* Texto */
+  /* Texto.
+     `mist-400` se anadio en la Semana 5 para el texto secundario pequeno
+     (11-13 px). `mist-500` cumple AA sobre las superficies oscuras (5.2-5.9:1)
+     pero a ese tamano cuesta leerlo en pantallas de portatil; `mist-400` sube
+     a 7.0-8.0:1 sin romper la jerarquia visual frente a `mist-300`. */
   --color-mist-100: #f1eefb;
   --color-mist-300: #c9c2e3;
+  --color-mist-400: #a79ec4;
   --color-mist-500: #8f86ad;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;

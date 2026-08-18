@@ -123,7 +123,7 @@ function EstadoAnalizando() {
         {pasos.map((paso, indice) => (
           <li
             key={paso}
-            className="text-xs text-mist-500"
+            className="text-xs text-mist-400"
             // Escalona la aparicion de cada paso para dar sensacion de progreso.
             style={{ animation: `athenia-fade-up 0.4s ease-out ${indice * 0.35}s both` }}
           >

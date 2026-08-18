@@ -169,7 +169,7 @@ export default function BuscarContenidos() {
                   onClick={() => setCategoriaActiva(activa ? FILTRO_TODOS : categoria)}
                   aria-pressed={activa}
                   className={`rounded-lg transition-opacity ${
-                    activa ? 'ring-2 ring-brand-400' : 'opacity-70 hover:opacity-100'
+                    activa ? 'ring-2 ring-brand-400' : 'opacity-85 hover:opacity-100'
                   }`}
                 >
                   <CategoryBadge categoria={categoria} />
@@ -222,7 +222,7 @@ export default function BuscarContenidos() {
       ) : items.length > 0 ? (
         <div
           className={`grid gap-4 transition-opacity md:grid-cols-2 xl:grid-cols-3 ${
-            cargando ? 'opacity-60' : 'opacity-100'
+            cargando ? 'opacity-75' : 'opacity-100'
           }`}
         >
           {items.map((contenido) => (
