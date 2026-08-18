@@ -36,6 +36,11 @@ from collections import Counter
 from typing import List, Optional
 
 from .config import settings
+from .domain.confianza import (
+    etiqueta_de_franja,
+    etiquetas_ordenadas,
+    nivel_de_confianza,
+)
 from .domain.protocols import Clasificador, RepositorioContenidos
 from .ml import registro as registro_ml
 from .ml.adaptador import AdaptadorModelo
@@ -114,9 +119,16 @@ def analizar_y_guardar(
 
     resultado = motor.clasificar(entrada["titulo"], entrada["texto"])
 
+    # `nivel_confianza` se calcula aqui, en un solo sitio, para que valga igual
+    # sea cual sea el motor que respondio (modelo real o reglas). Sin el, la
+    # interfaz pintaba un 0.37 —el suelo del modelo, que en la practica
+    # significa "no lo se"— con la misma autoridad visual que un 0.93.
+    probabilidad = resultado.get("probabilidad", 0.0)
+
     return historial.agregar(
         {
             **resultado,
+            "nivel_confianza": nivel_de_confianza(probabilidad),
             "titulo": entrada["titulo"],
             "texto": entrada["texto"],
             "origen": entrada.get("origen"),
@@ -165,14 +177,6 @@ def calcular_metricas(items: List[dict]) -> dict:
 
 # --- Analiticas del dashboard (Semana 4) -----------------------------------
 
-#: Franjas de confianza, evaluadas en orden. La primera cuyo umbral se cumple
-#: gana, asi que deben ir de mayor a menor.
-FRANJAS_CONFIANZA = (
-    ("Alta (≥75%)", 0.75),
-    ("Media (50-74%)", 0.50),
-    ("Baja (<50%)", 0.0),
-)
-
 ORIGEN_NO_ESPECIFICADO = "Sin origen"
 
 
@@ -186,14 +190,6 @@ def _segmentos(conteo: Counter, total: int) -> List[dict]:
         }
         for etiqueta, cantidad in conteo.most_common()
     ]
-
-
-def _franja_de_confianza(probabilidad: float) -> str:
-    """Etiqueta de la franja a la que pertenece una probabilidad."""
-    for etiqueta, minimo in FRANJAS_CONFIANZA:
-        if probabilidad >= minimo:
-            return etiqueta
-    return FRANJAS_CONFIANZA[-1][0]
 
 
 def calcular_analiticas(items: List[dict], motor: Clasificador) -> dict:
@@ -226,7 +222,7 @@ def calcular_analiticas(items: List[dict], motor: Clasificador) -> dict:
     total = len(items)
     por_categoria = Counter(i["categoria"] for i in items)
     palabras = Counter(p for i in items for p in i.get("informacion_adicional", []))
-    por_confianza = Counter(_franja_de_confianza(i["probabilidad"]) for i in items)
+    por_confianza = Counter(etiqueta_de_franja(i["probabilidad"]) for i in items)
     por_origen = Counter(i.get("origen") or ORIGEN_NO_ESPECIFICADO for i in items)
 
     # Actividad por dia. `creado_en` es un datetime con tz UTC; se agrupa por
@@ -253,7 +249,7 @@ def calcular_analiticas(items: List[dict], motor: Clasificador) -> dict:
                 "cantidad": por_confianza.get(etiqueta, 0),
                 "porcentaje": round(por_confianza.get(etiqueta, 0) / total * 100, 1),
             }
-            for etiqueta, _ in FRANJAS_CONFIANZA
+            for etiqueta in etiquetas_ordenadas()
         ],
         "distribucion_origenes": _segmentos(por_origen, total),
         "top_palabras_clave": [

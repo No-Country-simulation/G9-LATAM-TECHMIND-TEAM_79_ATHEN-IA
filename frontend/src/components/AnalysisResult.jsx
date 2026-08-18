@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { BrainCircuit, Tag, Save, FolderOpen, Check } from 'lucide-react'
+import { BrainCircuit, Tag, Save, FolderOpen, Check, AlertTriangle } from 'lucide-react'
 import CategoryBadge, { KeywordBadge } from './CategoryBadge'
 import { Spinner } from './Loaders'
 import { aPorcentaje, colorDeCategoria, estilosDeCategoria } from '../data/categorias'
@@ -64,6 +64,7 @@ export default function AnalysisResult({
     categorias_relacionadas: relacionadas = [],
     modelo,
     id,
+    nivel_confianza: nivelConfianza,
   } = resultado
 
   const color = colorDeCategoria(categoria)
@@ -92,6 +93,28 @@ export default function AnalysisResult({
       </div>
 
       <div className="space-y-6 p-5">
+        {/* --- Aviso de confianza baja ---
+            El modelo siempre devuelve una categoria: es un clasificador, no
+            tiene la opcion de "no se". Ante texto sin senal cae a su suelo
+            (~37%) y, sin este aviso, la interfaz pintaba ese resultado con la
+            misma autoridad visual que uno del 93%. */}
+        {nivelConfianza === 'baja' && (
+          <div
+            role="status"
+            className="flex items-start gap-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3.5"
+          >
+            <AlertTriangle size={17} className="mt-0.5 shrink-0 text-amber-400" aria-hidden="true" />
+            <div>
+              <p className="text-sm font-medium text-amber-100">Confianza baja</p>
+              <p className="mt-0.5 text-xs leading-relaxed text-amber-200/80">
+                El modelo no encontro senales claras en este texto. Revisa la
+                categoria antes de darla por buena, o agrega mas detalle tecnico
+                al contenido.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* --- Categoria principal + confianza --- */}
         <div className="grid gap-5 sm:grid-cols-2">
           <div>

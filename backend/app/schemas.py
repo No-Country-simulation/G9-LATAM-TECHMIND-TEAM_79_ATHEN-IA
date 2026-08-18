@@ -140,6 +140,15 @@ class AnalisisOutput(BaseModel):
         default="mock",
         description="Identificador del modelo que produjo la prediccion.",
     )
+    nivel_confianza: Literal["alta", "media", "baja"] = Field(
+        default="baja",
+        description=(
+            "Franja de certeza declarada por el modelo: alta (>=75%), "
+            "media (50-74%) o baja (<50%). Usa los mismos umbrales que la "
+            "distribucion de `GET /analiticas`. Cuando es 'baja', la interfaz "
+            "advierte al usuario en vez de presentar la categoria como firme."
+        ),
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -148,6 +157,7 @@ class AnalisisOutput(BaseModel):
                     "categoria": "Backend",
                     "probabilidad": 0.92,
                     "informacion_adicional": ["Java", "Spring Boot", "API REST"],
+                    "nivel_confianza": "alta",
                 }
             ]
         }

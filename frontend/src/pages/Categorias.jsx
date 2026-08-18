@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Layers, AlertCircle } from 'lucide-react'
 import { Skeleton } from '../components/Loaders'
-import { useMetricas } from '../hooks/useContenidos'
+import { useAnaliticas } from '../hooks/useContenidos'
 import { obtenerCategorias } from '../services/api'
 import { CATEGORIAS_REGLAS, estilosDeCategoria } from '../data/categorias'
 
@@ -10,7 +10,7 @@ import { CATEGORIAS_REGLAS, estilosDeCategoria } from '../data/categorias'
  * Vista "Categorias".
  *
  * Cruza el catalogo que el modelo puede predecir (`GET /categorias`) con
- * cuantos contenidos hay de cada una en el historial (`GET /metricas`).
+ * cuantos contenidos hay de cada una en el historial (`GET /analiticas`).
  * Si el backend no responde, cae al catalogo local para que la demo siga
  * siendo navegable.
  */
@@ -19,11 +19,11 @@ export default function Categorias() {
   const [cargandoCatalogo, setCargandoCatalogo] = useState(true)
   const [sinBackend, setSinBackend] = useState(false)
 
-  const { metricas } = useMetricas()
+  const { analiticas } = useAnaliticas()
 
   // Conteo por categoria a partir de las metricas del historial.
   const conteo = Object.fromEntries(
-    (metricas?.distribucion ?? []).map((d) => [d.categoria, d.cantidad]),
+    (analiticas?.distribucion_categorias ?? []).map((d) => [d.etiqueta, d.cantidad]),
   )
 
   useEffect(() => {

@@ -88,6 +88,18 @@ TAXONOMIA: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "Serverless": ("serverless", "sin servidor", "functions"),
         "Escalabilidad": ("escalabilidad", "alta disponibilidad", "load balancer"),
     },
+    # El modelo entrenado tiene una clase "Ciberseguridad y Redes", pero la
+    # taxonomia no tenia rama equivalente: un curso de firewalls y pentesting
+    # se clasificaba bien pero salia con `informacion_adicional: []`, sin
+    # ninguna tecnologia que mostrar en la tarjeta.
+    "Ciberseguridad": {
+        "Seguridad": ("seguridad", "ciberseguridad", "hardening", "vulnerabilidad"),
+        "Firewall": ("firewall", "firewalls", "waf", "iptables"),
+        "VPN": ("vpn", "tunel seguro", "ipsec"),
+        "Pentesting": ("pentesting", "pentest", "ethical hacking", "owasp"),
+        "Criptografia": ("criptografia", "cifrado", "encriptacion", "tls", "ssl"),
+        "Redes": ("redes", "tcp/ip", "dns", "subred", "enrutamiento"),
+    },
     "Base de Datos": {
         "SQL": ("sql", "consulta", "consultas", "join"),
         "Oracle Database": ("oracle database", "oracle db", "pl/sql"),

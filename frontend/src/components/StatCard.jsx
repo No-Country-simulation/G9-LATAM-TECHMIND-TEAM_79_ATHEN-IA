@@ -23,19 +23,29 @@ export default function StatCard({
         aria-hidden="true"
       />
 
-      <div className="relative flex items-start justify-between">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-mist-500">
+      {/* `min-w-0` en el texto y `shrink-0` en el icono: sin ellos, un valor o
+          una etiqueta larga empujan el icono fuera de la tarjeta (que tiene
+          `overflow-hidden`, asi que se recortaria). `truncate` corta con
+          puntos suspensivos en vez de desbordar. */}
+      <div className="relative flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-xs font-medium uppercase tracking-wide text-mist-500">
             {etiqueta}
           </p>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-mist-100">{valor}</p>
-          {variacion && <p className="mt-1 text-xs text-mist-500">{variacion}</p>}
+          <p
+            className="mt-2 truncate text-3xl font-bold tracking-tight text-mist-100"
+            title={String(valor)}
+          >
+            {valor}
+          </p>
+          {variacion && <p className="mt-1 truncate text-xs text-mist-500">{variacion}</p>}
         </div>
 
         {Icono && (
           <span
-            className="flex h-11 w-11 items-center justify-center rounded-xl"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
             style={{ backgroundColor: `${acento}1f`, color: acento }}
+            aria-hidden="true"
           >
             <Icono size={20} strokeWidth={2} />
           </span>
