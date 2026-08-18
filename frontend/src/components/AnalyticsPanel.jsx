@@ -19,7 +19,7 @@ const COLOR_CONFIANZA = {
 /** Barras horizontales con etiqueta, cantidad y porcentaje. */
 function BarrasDistribucion({ segmentos, colorDe, vacio }) {
   if (!segmentos?.length) {
-    return <p className="text-sm text-mist-500">{vacio}</p>
+    return <p className="text-sm text-tinta-500">{vacio}</p>
   }
 
   const maximo = Math.max(...segmentos.map((s) => s.cantidad), 1)
@@ -28,11 +28,11 @@ function BarrasDistribucion({ segmentos, colorDe, vacio }) {
     <ul className="space-y-3">
       {segmentos.map((segmento) => (
         <li key={segmento.etiqueta} className="flex items-center gap-3 text-sm">
-          <span className="w-28 shrink-0 truncate text-mist-300 sm:w-40" title={segmento.etiqueta}>
+          <span className="w-28 shrink-0 truncate text-tinta-700 sm:w-40" title={segmento.etiqueta}>
             {segmento.etiqueta}
           </span>
 
-          <div className="h-2 flex-1 overflow-hidden rounded-full bg-ink-800">
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-lienzo">
             <div
               className="h-full rounded-full transition-[width] duration-700 ease-out"
               style={{
@@ -42,10 +42,10 @@ function BarrasDistribucion({ segmentos, colorDe, vacio }) {
             />
           </div>
 
-          <span className="w-8 shrink-0 text-right text-xs text-mist-400">
+          <span className="w-8 shrink-0 text-right text-xs text-tinta-600">
             {segmento.cantidad}
           </span>
-          <span className="w-12 shrink-0 text-right text-xs font-semibold text-mist-100">
+          <span className="w-12 shrink-0 text-right text-xs font-semibold text-tinta-900">
             {segmento.porcentaje}%
           </span>
         </li>
@@ -57,14 +57,14 @@ function BarrasDistribucion({ segmentos, colorDe, vacio }) {
 /** Gráfico de líneas/área de la actividad diaria, en SVG puro. */
 function GraficoActividad({ puntos }) {
   if (!puntos?.length) {
-    return <p className="text-sm text-mist-500">Aún no hay actividad registrada.</p>
+    return <p className="text-sm text-tinta-500">Aún no hay actividad registrada.</p>
   }
 
   // Con un solo día no hay línea que dibujar: se muestra el dato directo.
   if (puntos.length === 1) {
     return (
-      <p className="text-sm text-mist-300">
-        <span className="text-2xl font-bold text-mist-100">{puntos[0].cantidad}</span>{' '}
+      <p className="text-sm text-tinta-700">
+        <span className="text-2xl font-bold text-tinta-900">{puntos[0].cantidad}</span>{' '}
         análisis el {puntos[0].fecha}
       </p>
     )
@@ -105,7 +105,7 @@ function GraficoActividad({ puntos }) {
         />
       </svg>
 
-      <figcaption className="mt-2 flex justify-between text-[11px] text-mist-400">
+      <figcaption className="mt-2 flex justify-between text-[11px] text-tinta-600">
         <span>{puntos[0].fecha}</span>
         <span>{puntos[puntos.length - 1].fecha}</span>
       </figcaption>
@@ -117,11 +117,11 @@ function GraficoActividad({ puntos }) {
 function Bloque({ titulo, descripcion, icono: Icono, children, className = '' }) {
   return (
     <section className={`card p-6 ${className}`}>
-      <h3 className="flex items-center gap-2 text-base font-semibold text-mist-100">
-        {Icono && <Icono size={16} className="text-brand-400" aria-hidden="true" />}
+      <h3 className="flex items-center gap-2 text-base font-semibold text-tinta-900">
+        {Icono && <Icono size={16} className="text-brand-600" aria-hidden="true" />}
         {titulo}
       </h3>
-      {descripcion && <p className="mb-5 mt-1 text-sm text-mist-500">{descripcion}</p>}
+      {descripcion && <p className="mb-5 mt-1 text-sm text-tinta-500">{descripcion}</p>}
       {children}
     </section>
   )

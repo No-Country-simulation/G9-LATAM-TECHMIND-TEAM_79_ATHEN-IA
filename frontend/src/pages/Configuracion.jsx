@@ -33,11 +33,11 @@ import { useHistorialBusquedas } from '../hooks/useHistorialBusquedas'
 /** Fila de dato del sistema. */
 function Dato({ etiqueta, valor, destacado = false }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-ink-700 py-2.5 last:border-0">
-      <span className="text-sm text-mist-400">{etiqueta}</span>
+    <div className="flex items-center justify-between gap-3 border-b border-linea py-2.5 last:border-0">
+      <span className="text-sm text-tinta-600">{etiqueta}</span>
       <span
         className={`truncate text-sm font-medium ${
-          destacado ? 'text-brand-300' : 'text-mist-100'
+          destacado ? 'text-brand-700' : 'text-tinta-900'
         }`}
         title={String(valor)}
       >
@@ -101,11 +101,11 @@ export default function Configuracion() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-mist-100">
-          <Settings size={24} className="text-brand-400" aria-hidden="true" />
+        <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-tinta-900">
+          <Settings size={24} className="text-brand-600" aria-hidden="true" />
           Configuracion
         </h1>
-        <p className="mt-1 text-sm text-mist-400">
+        <p className="mt-1 text-sm text-tinta-600">
           Estado del sistema y mantenimiento de datos.
         </p>
       </div>
@@ -113,20 +113,20 @@ export default function Configuracion() {
       {error && (
         <div
           role="alert"
-          className="flex items-start gap-2.5 rounded-xl border border-rose-500/50 bg-rose-500/15 p-3.5"
+          className="flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-3.5"
         >
-          <AlertCircle size={17} className="mt-0.5 shrink-0 text-rose-300" aria-hidden="true" />
-          <p className="text-sm text-rose-100">{error}</p>
+          <AlertCircle size={17} className="mt-0.5 shrink-0 text-rose-600" aria-hidden="true" />
+          <p className="text-sm text-rose-700">{error}</p>
         </div>
       )}
 
       {aviso && (
         <div
           role="status"
-          className="flex items-start gap-2.5 rounded-xl border border-emerald-500/50 bg-emerald-500/15 p-3.5"
+          className="flex items-start gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5"
         >
-          <CheckCircle2 size={17} className="mt-0.5 shrink-0 text-emerald-300" aria-hidden="true" />
-          <p className="text-sm text-emerald-100">{aviso}</p>
+          <CheckCircle2 size={17} className="mt-0.5 shrink-0 text-emerald-600" aria-hidden="true" />
+          <p className="text-sm text-emerald-700">{aviso}</p>
         </div>
       )}
 
@@ -134,14 +134,14 @@ export default function Configuracion() {
         {/* --- Estado del servicio --- */}
         <section className="card p-6">
           <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="flex items-center gap-2 text-base font-semibold text-mist-100">
-              <Server size={16} className="text-brand-400" aria-hidden="true" />
+            <h2 className="flex items-center gap-2 text-base font-semibold text-tinta-900">
+              <Server size={16} className="text-brand-600" aria-hidden="true" />
               Servicio
             </h2>
             <button
               type="button"
               onClick={() => setRecarga((n) => n + 1)}
-              className="rounded-lg p-1.5 text-mist-400 transition-colors hover:bg-ink-800 hover:text-mist-100"
+              className="rounded-lg p-1.5 text-tinta-600 transition-colors hover:bg-lienzo hover:text-tinta-900"
               aria-label="Actualizar estado del servicio"
             >
               <RefreshCw size={15} className={cargando ? 'animate-spin' : ''} />
@@ -161,14 +161,14 @@ export default function Configuracion() {
               />
             </div>
           ) : (
-            <p className="text-sm text-mist-400">Sin conexion con el servicio.</p>
+            <p className="text-sm text-tinta-600">Sin conexion con el servicio.</p>
           )}
         </section>
 
         {/* --- Motor de IA --- */}
         <section className="card p-6">
-          <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-mist-100">
-            <Cpu size={16} className="text-brand-400" aria-hidden="true" />
+          <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-tinta-900">
+            <Cpu size={16} className="text-brand-600" aria-hidden="true" />
             Motor de clasificacion
           </h2>
 
@@ -185,7 +185,7 @@ export default function Configuracion() {
               <Dato etiqueta="Tipo" valor={salud.detalle_modelo || '—'} />
 
               {!usaModeloReal && (
-                <p className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/15 p-2.5 text-xs leading-relaxed text-amber-100">
+                <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs leading-relaxed text-amber-800">
                   El modelo entrenado no esta disponible. La API responde con el
                   clasificador por reglas: sigue funcionando, pero con menor
                   precision.
@@ -193,24 +193,24 @@ export default function Configuracion() {
               )}
             </div>
           ) : (
-            <p className="text-sm text-mist-400">Sin conexion con el servicio.</p>
+            <p className="text-sm text-tinta-600">Sin conexion con el servicio.</p>
           )}
         </section>
       </div>
 
       {/* --- Mantenimiento --- */}
       <section className="card p-6">
-        <h2 className="text-base font-semibold text-mist-100">Mantenimiento de datos</h2>
-        <p className="mb-5 mt-1 text-sm text-mist-400">
+        <h2 className="text-base font-semibold text-tinta-900">Mantenimiento de datos</h2>
+        <p className="mb-5 mt-1 text-sm text-tinta-600">
           Acciones utiles para dejar el entorno limpio antes de una demostracion.
         </p>
 
         <div className="space-y-3">
           {/* Historial del servidor */}
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink-700 bg-ink-900 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-linea bg-panel-suave p-4">
             <div className="min-w-0">
-              <p className="text-sm font-medium text-mist-100">Historial de contenidos</p>
-              <p className="mt-0.5 text-xs text-mist-400">
+              <p className="text-sm font-medium text-tinta-900">Historial de contenidos</p>
+              <p className="mt-0.5 text-xs text-tinta-600">
                 Borra del servidor todos los analisis guardados.
                 {salud && ` Ahora hay ${salud.contenidos_en_historial}.`}
               </p>
@@ -227,10 +227,10 @@ export default function Configuracion() {
           </div>
 
           {/* Historial local */}
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink-700 bg-ink-900 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-linea bg-panel-suave p-4">
             <div className="min-w-0">
-              <p className="text-sm font-medium text-mist-100">Busquedas recientes</p>
-              <p className="mt-0.5 text-xs text-mist-400">
+              <p className="text-sm font-medium text-tinta-900">Busquedas recientes</p>
+              <p className="mt-0.5 text-xs text-tinta-600">
                 Guardadas solo en este navegador.{' '}
                 {historialBusquedas.entradas.length > 0
                   ? `Hay ${historialBusquedas.entradas.length}.`
@@ -249,7 +249,7 @@ export default function Configuracion() {
           </div>
         </div>
 
-        <p className="mt-5 text-xs leading-relaxed text-mist-400">
+        <p className="mt-5 text-xs leading-relaxed text-tinta-600">
           Las preferencias de usuario (tema, idioma y notificaciones) llegan
           despues del MVP. No se muestran aqui porque todavia no tendrian efecto.
         </p>

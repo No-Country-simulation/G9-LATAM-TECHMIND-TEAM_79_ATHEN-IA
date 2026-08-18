@@ -19,7 +19,7 @@ export default function SearchHistory({ entradas = [], onSeleccionar, onEliminar
     <section aria-labelledby="titulo-historial" className="flex flex-wrap items-center gap-2">
       <h2
         id="titulo-historial"
-        className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-mist-400"
+        className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-tinta-600"
       >
         <History size={13} aria-hidden="true" />
         Búsquedas recientes
@@ -30,11 +30,11 @@ export default function SearchHistory({ entradas = [], onSeleccionar, onEliminar
           <li key={entrada.termino}>
             {/* Grupo botón + eliminar. No se anida un <button> dentro de otro
                 (HTML inválido): son hermanos dentro de un contenedor. */}
-            <span className="inline-flex items-center overflow-hidden rounded-lg border border-ink-700 bg-ink-850 transition-colors hover:border-brand-500/50">
+            <span className="inline-flex items-center overflow-hidden rounded-lg border border-linea bg-panel transition-colors hover:border-brand-500/50">
               <button
                 type="button"
                 onClick={() => onSeleccionar?.(entrada.termino)}
-                className="px-2.5 py-1 text-xs text-mist-300 transition-colors hover:text-mist-100"
+                className="px-2.5 py-1 text-xs text-tinta-700 transition-colors hover:text-tinta-900"
               >
                 {entrada.termino}
               </button>
@@ -42,7 +42,7 @@ export default function SearchHistory({ entradas = [], onSeleccionar, onEliminar
               <button
                 type="button"
                 onClick={() => onEliminar?.(entrada.termino)}
-                className="border-l border-ink-700 px-1.5 py-1 text-mist-500 transition-colors hover:bg-ink-800 hover:text-rose-300"
+                className="border-l border-linea px-1.5 py-1 text-tinta-500 transition-colors hover:bg-lienzo hover:text-rose-600"
                 aria-label={`Quitar "${entrada.termino}" del historial`}
               >
                 <X size={12} />
@@ -55,7 +55,7 @@ export default function SearchHistory({ entradas = [], onSeleccionar, onEliminar
       <button
         type="button"
         onClick={onLimpiar}
-        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-mist-400 transition-colors hover:text-rose-300"
+        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-tinta-600 transition-colors hover:text-rose-600"
       >
         <Trash2 size={12} aria-hidden="true" />
         Limpiar

@@ -46,11 +46,11 @@ export default function Recomendaciones() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-mist-100">
-          <Sparkles size={24} className="text-brand-400" aria-hidden="true" />
+        <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-tinta-900">
+          <Sparkles size={24} className="text-brand-600" aria-hidden="true" />
           Recomendaciones
         </h1>
-        <p className="mt-1 text-sm text-mist-400">
+        <p className="mt-1 text-sm text-tinta-600">
           Contenido relacionado por similitud de tecnologias y categoria.
         </p>
       </div>
@@ -58,21 +58,21 @@ export default function Recomendaciones() {
       {errorHistorial && (
         <div
           role="alert"
-          className="flex items-start gap-2.5 rounded-xl border border-rose-500/50 bg-rose-500/15 p-3.5"
+          className="flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-3.5"
         >
-          <AlertCircle size={17} className="mt-0.5 shrink-0 text-rose-300" aria-hidden="true" />
-          <p className="text-sm text-rose-100">{errorHistorial}</p>
+          <AlertCircle size={17} className="mt-0.5 shrink-0 text-rose-600" aria-hidden="true" />
+          <p className="text-sm text-rose-700">{errorHistorial}</p>
         </div>
       )}
 
       {/* --- Estado vacio: no hay nada sobre lo que recomendar --- */}
       {!cargandoHistorial && items.length === 0 && !errorHistorial && (
         <div className="card flex flex-col items-center justify-center p-12 text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-ink-800 text-mist-400">
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-lienzo text-tinta-600">
             <Sparkles size={26} aria-hidden="true" />
           </span>
           <p className="mt-4 text-sm font-medium text-mist-200">Aun no hay recomendaciones</p>
-          <p className="mt-1 max-w-sm text-sm text-mist-400">
+          <p className="mt-1 max-w-sm text-sm text-tinta-600">
             Necesitamos al menos dos contenidos analizados para poder
             relacionarlos entre si.
           </p>
@@ -91,7 +91,7 @@ export default function Recomendaciones() {
           <section className="card p-5">
             <label
               htmlFor="referencia"
-              className="mb-2 block text-xs font-medium uppercase tracking-wide text-mist-400"
+              className="mb-2 block text-xs font-medium uppercase tracking-wide text-tinta-600"
             >
               Basado en este contenido
             </label>
@@ -111,18 +111,18 @@ export default function Recomendaciones() {
               </select>
               <ChevronDown
                 size={16}
-                className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-mist-400"
+                className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-tinta-600"
                 aria-hidden="true"
               />
             </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <CategoryBadge categoria={referencia.categoria} tamano="sm" />
-              <span className="text-xs text-mist-400">
+              <span className="text-xs text-tinta-600">
                 Confianza {aPorcentaje(referencia.probabilidad)}%
               </span>
               {referencia.informacion_adicional?.length > 0 && (
-                <span className="text-xs text-mist-400">
+                <span className="text-xs text-tinta-600">
                   · {referencia.informacion_adicional.slice(0, 4).join(' · ')}
                 </span>
               )}

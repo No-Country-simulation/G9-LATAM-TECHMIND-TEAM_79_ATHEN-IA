@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link, Outlet } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
 import Header from './components/Header'
+import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import MisCursos from './pages/MisCursos'
 import AgregarContenido from './pages/AgregarContenido'
@@ -15,8 +16,8 @@ import Configuracion from './pages/Configuracion'
 function NoEncontrado() {
   return (
     <div className="card flex flex-col items-center justify-center p-12 text-center">
-      <p className="text-4xl font-bold text-brand-400">404</p>
-      <p className="mt-2 text-sm text-mist-300">Esta pagina no existe.</p>
+      <p className="text-4xl font-bold text-brand-600">404</p>
+      <p className="mt-2 text-sm text-tinta-700">Esta pagina no existe.</p>
       <Link to="/" className="btn-primary mt-6">
         Volver al inicio
       </Link>
@@ -25,37 +26,51 @@ function NoEncontrado() {
 }
 
 /**
- * Shell de la aplicacion: Sidebar + Header fijos, contenido enrutado.
+ * Shell de la aplicacion: Sidebar oscuro + Header claro, contenido enrutado.
+ *
  * El estado del drawer movil vive aqui porque lo comparten Sidebar y Header.
+ * `Outlet` renderiza la ruta hija, de modo que `/login` pueda quedar FUERA de
+ * este shell: esa pantalla ocupa el viewport completo y no lleva navegacion.
  */
-export default function App() {
+function LayoutPrincipal() {
   const [menuAbierto, setMenuAbierto] = useState(false)
 
   return (
-    <BrowserRouter>
-      <div className="flex min-h-screen bg-ink-950">
-        <Sidebar abierto={menuAbierto} onCerrar={() => setMenuAbierto(false)} />
+    <div className="flex min-h-screen bg-lienzo">
+      <Sidebar abierto={menuAbierto} onCerrar={() => setMenuAbierto(false)} />
 
-        <div className="flex min-w-0 flex-1 flex-col">
-          <Header onAbrirMenu={() => setMenuAbierto(true)} />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Header onAbrirMenu={() => setMenuAbierto(true)} />
 
-          <main className="flex-1 px-4 py-6 lg:px-8">
-            <div className="mx-auto max-w-7xl">
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/mis-cursos" element={<MisCursos />} />
-                <Route path="/agregar" element={<AgregarContenido />} />
-                <Route path="/buscar" element={<BuscarContenidos />} />
-                <Route path="/categorias" element={<Categorias />} />
-                <Route path="/recomendaciones" element={<Recomendaciones />} />
-                <Route path="/asistente" element={<AsistenteIA />} />
-                <Route path="/configuracion" element={<Configuracion />} />
-                <Route path="*" element={<NoEncontrado />} />
-              </Routes>
-            </div>
-          </main>
-        </div>
+        <main className="flex-1 px-4 py-6 lg:px-8">
+          <div className="mx-auto max-w-7xl">
+            <Outlet />
+          </div>
+        </main>
       </div>
+    </div>
+  )
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Fuera del shell: pantalla completa, sin sidebar ni header. */}
+        <Route path="/login" element={<Login />} />
+
+        <Route element={<LayoutPrincipal />}>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/mis-cursos" element={<MisCursos />} />
+          <Route path="/agregar" element={<AgregarContenido />} />
+          <Route path="/buscar" element={<BuscarContenidos />} />
+          <Route path="/categorias" element={<Categorias />} />
+          <Route path="/recomendaciones" element={<Recomendaciones />} />
+          <Route path="/asistente" element={<AsistenteIA />} />
+          <Route path="/configuracion" element={<Configuracion />} />
+          <Route path="*" element={<NoEncontrado />} />
+        </Route>
+      </Routes>
     </BrowserRouter>
   )
 }

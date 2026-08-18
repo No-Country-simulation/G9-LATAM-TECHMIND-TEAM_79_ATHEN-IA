@@ -54,8 +54,8 @@ export default function AgregarContenido() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-mist-100">Agregar Contenido</h1>
-        <p className="mt-1 text-sm text-mist-500">
+        <h1 className="text-2xl font-bold tracking-tight text-tinta-900">Agregar Contenido</h1>
+        <p className="mt-1 text-sm text-tinta-500">
           AthenIA analizara el texto, detectara la categoria y extraera las palabras clave.
         </p>
       </div>
@@ -72,10 +72,10 @@ export default function AgregarContenido() {
           {guardado && (
             <div
               role="status"
-              className="flex items-center gap-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-3.5"
+              className="flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5"
             >
-              <CheckCircle2 size={17} className="shrink-0 text-emerald-400" />
-              <p className="text-sm text-emerald-200">
+              <CheckCircle2 size={17} className="shrink-0 text-emerald-600" />
+              <p className="text-sm text-emerald-700">
                 Curso guardado en tu biblioteca. Ya aparece en el Dashboard.
               </p>
             </div>
@@ -110,12 +110,12 @@ function EstadoAnalizando() {
 
   return (
     <div className="card flex min-h-[320px] flex-col items-center justify-center p-8 text-center">
-      <span className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-600/20 text-brand-300">
+      <span className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
         <BrainCircuit size={26} />
-        <span className="absolute inset-0 animate-ping rounded-2xl bg-brand-500/20" />
+        <span className="absolute inset-0 animate-ping rounded-2xl bg-brand-100" />
       </span>
 
-      <p className="mt-4 text-sm font-medium text-mist-100">
+      <p className="mt-4 text-sm font-medium text-tinta-900">
         AthenIA esta analizando tu contenido...
       </p>
 
@@ -123,7 +123,7 @@ function EstadoAnalizando() {
         {pasos.map((paso, indice) => (
           <li
             key={paso}
-            className="text-xs text-mist-400"
+            className="text-xs text-tinta-600"
             // Escalona la aparicion de cada paso para dar sensacion de progreso.
             style={{ animation: `athenia-fade-up 0.4s ease-out ${indice * 0.35}s both` }}
           >
@@ -141,12 +141,12 @@ function EstadoAnalizando() {
 function EstadoVacio() {
   return (
     <div className="card flex min-h-[320px] flex-col items-center justify-center p-8 text-center">
-      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-ink-800 text-mist-500">
+      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-lienzo text-tinta-500">
         <Inbox size={26} />
       </span>
 
-      <p className="mt-4 text-sm font-medium text-mist-300">Sin analisis todavia</p>
-      <p className="mt-1 max-w-xs text-sm text-mist-500">
+      <p className="mt-4 text-sm font-medium text-tinta-700">Sin analisis todavia</p>
+      <p className="mt-1 max-w-xs text-sm text-tinta-500">
         Completa el formulario y presiona "Analizar con IA" para ver la categoria y las
         palabras clave detectadas.
       </p>

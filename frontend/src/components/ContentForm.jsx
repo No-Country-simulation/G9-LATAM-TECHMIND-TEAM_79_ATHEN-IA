@@ -74,16 +74,16 @@ export default function ContentForm({
 
   return (
     <form onSubmit={enviar} className="card p-6" noValidate>
-      <h2 className="text-lg font-semibold text-mist-100">Agregar Nuevo Curso</h2>
-      <p className="mt-1 text-sm text-mist-500">
+      <h2 className="text-lg font-semibold text-tinta-900">Agregar Nuevo Curso</h2>
+      <p className="mt-1 text-sm text-tinta-500">
         Ingresa la informacion del contenido tecnico que deseas analizar.
       </p>
 
       <div className="mt-6 space-y-5">
         {/* --- Titulo --- */}
         <div>
-          <label htmlFor="titulo" className="mb-1.5 block text-sm font-medium text-mist-300">
-            Titulo del curso o contenido <span className="text-brand-400">*</span>
+          <label htmlFor="titulo" className="mb-1.5 block text-sm font-medium text-tinta-700">
+            Titulo del curso o contenido <span className="text-brand-600">*</span>
           </label>
           <input
             id="titulo"
@@ -95,10 +95,10 @@ export default function ContentForm({
             placeholder="Ej: Introduccion a Spring Boot"
             aria-invalid={Boolean(errores.titulo)}
             aria-describedby={errores.titulo ? 'error-titulo' : undefined}
-            className={`input-base ${errores.titulo ? 'border-rose-500' : ''}`}
+            className={`input-base ${errores.titulo ? 'border-rose-400' : ''}`}
           />
           {errores.titulo && (
-            <p id="error-titulo" className="mt-1.5 text-xs text-rose-400">
+            <p id="error-titulo" className="mt-1.5 text-xs text-rose-600">
               {errores.titulo}
             </p>
           )}
@@ -107,12 +107,12 @@ export default function ContentForm({
         {/* --- Texto / Descripcion --- */}
         <div>
           <div className="mb-1.5 flex items-baseline justify-between">
-            <label htmlFor="texto" className="text-sm font-medium text-mist-300">
-              Descripcion / Contenido <span className="text-brand-400">*</span>
+            <label htmlFor="texto" className="text-sm font-medium text-tinta-700">
+              Descripcion / Contenido <span className="text-brand-600">*</span>
             </label>
             <span
               className={`text-xs ${
-                caracteres > LIMITE_TEXTO ? 'text-rose-400' : 'text-mist-500'
+                caracteres > LIMITE_TEXTO ? 'text-rose-600' : 'text-tinta-500'
               }`}
             >
               {caracteres}/{LIMITE_TEXTO}
@@ -129,11 +129,11 @@ export default function ContentForm({
             aria-invalid={Boolean(errores.texto)}
             aria-describedby={errores.texto ? 'error-texto' : undefined}
             className={`input-base resize-y leading-relaxed ${
-              errores.texto ? 'border-rose-500' : ''
+              errores.texto ? 'border-rose-400' : ''
             }`}
           />
           {errores.texto && (
-            <p id="error-texto" className="mt-1.5 text-xs text-rose-400">
+            <p id="error-texto" className="mt-1.5 text-xs text-rose-600">
               {errores.texto}
             </p>
           )}
@@ -142,9 +142,9 @@ export default function ContentForm({
         {/* --- Metadatos opcionales --- */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label htmlFor="origen" className="mb-1.5 block text-sm font-medium text-mist-300">
+            <label htmlFor="origen" className="mb-1.5 block text-sm font-medium text-tinta-700">
               Origen del contenido{' '}
-              <span className="font-normal text-mist-500">(opcional)</span>
+              <span className="font-normal text-tinta-500">(opcional)</span>
             </label>
             <select
               id="origen"
@@ -163,8 +163,8 @@ export default function ContentForm({
           </div>
 
           <div>
-            <label htmlFor="url" className="mb-1.5 block text-sm font-medium text-mist-300">
-              URL <span className="font-normal text-mist-500">(si aplica)</span>
+            <label htmlFor="url" className="mb-1.5 block text-sm font-medium text-tinta-700">
+              URL <span className="font-normal text-tinta-500">(si aplica)</span>
             </label>
             <input
               id="url"
@@ -183,10 +183,10 @@ export default function ContentForm({
       {error && (
         <div
           role="alert"
-          className="mt-5 flex items-start gap-2.5 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3.5"
+          className="mt-5 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-3.5"
         >
-          <AlertCircle size={17} className="mt-0.5 shrink-0 text-rose-400" />
-          <p className="text-sm text-rose-200">{error}</p>
+          <AlertCircle size={17} className="mt-0.5 shrink-0 text-rose-600" />
+          <p className="text-sm text-rose-700">{error}</p>
         </div>
       )}
 

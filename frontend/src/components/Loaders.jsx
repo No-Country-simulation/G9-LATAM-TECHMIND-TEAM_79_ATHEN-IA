@@ -10,8 +10,8 @@ import { Loader2 } from 'lucide-react'
 /** Spinner simple con etiqueta opcional. */
 export function Spinner({ tamano = 18, etiqueta = '', className = '' }) {
   return (
-    <span className={`inline-flex items-center gap-2 text-mist-500 ${className}`} role="status">
-      <Loader2 size={tamano} className="animate-spin text-brand-400" />
+    <span className={`inline-flex items-center gap-2 text-tinta-500 ${className}`} role="status">
+      <Loader2 size={tamano} className="animate-spin text-brand-600" />
       {etiqueta && <span className="text-sm">{etiqueta}</span>}
       <span className="sr-only">Cargando</span>
     </span>
@@ -20,7 +20,7 @@ export function Spinner({ tamano = 18, etiqueta = '', className = '' }) {
 
 /** Bloque gris con pulso, base de todos los esqueletos. */
 export function Skeleton({ className = '' }) {
-  return <div className={`animate-pulse rounded-lg bg-ink-800 ${className}`} aria-hidden="true" />
+  return <div className={`animate-pulse rounded-lg bg-lienzo ${className}`} aria-hidden="true" />
 }
 
 /** Esqueleto de una tarjeta de metrica del Dashboard. */

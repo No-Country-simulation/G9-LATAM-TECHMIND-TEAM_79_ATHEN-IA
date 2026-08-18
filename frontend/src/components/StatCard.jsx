@@ -15,7 +15,7 @@ export default function StatCard({
   variacion,
 }) {
   return (
-    <article className="card group relative overflow-hidden p-5 transition-colors hover:border-ink-600">
+    <article className="card group relative overflow-hidden p-5 transition-colors hover:border-linea-fuerte">
       {/* Halo de color que reacciona al hover */}
       <div
         className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-15 blur-2xl transition-opacity group-hover:opacity-30"
@@ -29,16 +29,16 @@ export default function StatCard({
           puntos suspensivos en vez de desbordar. */}
       <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-medium uppercase tracking-wide text-mist-400">
+          <p className="truncate text-xs font-medium uppercase tracking-wide text-tinta-600">
             {etiqueta}
           </p>
           <p
-            className="mt-2 truncate text-3xl font-bold tracking-tight text-mist-100"
+            className="mt-2 truncate text-3xl font-bold tracking-tight text-tinta-900"
             title={String(valor)}
           >
             {valor}
           </p>
-          {variacion && <p className="mt-1 truncate text-xs text-mist-400">{variacion}</p>}
+          {variacion && <p className="mt-1 truncate text-xs text-tinta-600">{variacion}</p>}
         </div>
 
         {Icono && (

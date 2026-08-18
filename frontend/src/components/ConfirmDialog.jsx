@@ -103,21 +103,21 @@ export default function ConfirmDialog({
         aria-labelledby="titulo-confirmacion"
         aria-describedby="mensaje-confirmacion"
         onKeyDown={alTabular}
-        className="animate-fade-up relative w-full max-w-sm rounded-2xl border border-ink-700 bg-ink-900 p-6 shadow-2xl"
+        className="animate-fade-up relative w-full max-w-sm rounded-2xl border border-linea bg-panel-suave p-6 shadow-2xl"
       >
         <div className="flex items-start gap-3">
           <span
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-300"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700"
             aria-hidden="true"
           >
             <AlertTriangle size={19} />
           </span>
 
           <div className="min-w-0">
-            <h2 id="titulo-confirmacion" className="text-base font-semibold text-mist-100">
+            <h2 id="titulo-confirmacion" className="text-base font-semibold text-tinta-900">
               {titulo}
             </h2>
-            <p id="mensaje-confirmacion" className="mt-1.5 text-sm leading-relaxed text-mist-500">
+            <p id="mensaje-confirmacion" className="mt-1.5 text-sm leading-relaxed text-tinta-500">
               {mensaje}
             </p>
           </div>

@@ -35,7 +35,9 @@ function DonaCategorias({ distribucion, total }) {
   return (
     <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
       <svg viewBox="0 0 140 140" className="h-40 w-40 shrink-0 -rotate-90">
-        <circle cx="70" cy="70" r={RADIO} fill="none" stroke="#1a1530" strokeWidth="16" />
+        {/* Pista de fondo de la dona. En el tema claro debe ser un gris suave,
+            no la superficie oscura que usaba antes. */}
+        <circle cx="70" cy="70" r={RADIO} fill="none" stroke="#eef1f6" strokeWidth="16" />
 
         {distribucion.map(({ etiqueta: categoria, cantidad }) => {
           const porcion = (cantidad / total) * CIRCUNFERENCIA
@@ -67,7 +69,7 @@ function DonaCategorias({ distribucion, total }) {
           x="70"
           y="66"
           textAnchor="middle"
-          className="fill-mist-100 text-[22px] font-bold"
+          className="fill-tinta-900 text-[22px] font-bold"
           transform="rotate(90 70 70)"
         >
           {total}
@@ -76,7 +78,7 @@ function DonaCategorias({ distribucion, total }) {
           x="70"
           y="82"
           textAnchor="middle"
-          className="fill-mist-500 text-[10px] uppercase"
+          className="fill-tinta-500 text-[10px] uppercase"
           transform="rotate(90 70 70)"
         >
           cursos
@@ -90,9 +92,9 @@ function DonaCategorias({ distribucion, total }) {
               className="h-2.5 w-2.5 shrink-0 rounded-sm"
               style={{ backgroundColor: colorDeCategoria(categoria) }}
             />
-            <span className="flex-1 truncate text-mist-300">{categoria}</span>
-            <span className="text-mist-500">{cantidad}</span>
-            <span className="w-10 text-right font-semibold text-mist-100">{porcentaje}%</span>
+            <span className="flex-1 truncate text-tinta-700">{categoria}</span>
+            <span className="text-tinta-500">{cantidad}</span>
+            <span className="w-10 text-right font-semibold text-tinta-900">{porcentaje}%</span>
           </li>
         ))}
       </ul>
@@ -108,14 +110,14 @@ function TopPalabrasClave({ palabras }) {
     <ul className="space-y-2.5">
       {palabras.map(({ palabra, cantidad }) => (
         <li key={palabra} className="flex items-center gap-3 text-sm">
-          <span className="w-32 shrink-0 truncate text-mist-300">{palabra}</span>
-          <div className="h-2 flex-1 overflow-hidden rounded-full bg-ink-800">
+          <span className="w-32 shrink-0 truncate text-tinta-700">{palabra}</span>
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-lienzo">
             <div
               className="h-full rounded-full bg-brand-500 transition-[width] duration-700 ease-out"
               style={{ width: `${(cantidad / maximo) * 100}%` }}
             />
           </div>
-          <span className="w-6 text-right text-xs text-mist-400">{cantidad}</span>
+          <span className="w-6 text-right text-xs text-tinta-600">{cantidad}</span>
         </li>
       ))}
     </ul>
@@ -126,11 +128,11 @@ function TopPalabrasClave({ palabras }) {
 function SinDatos() {
   return (
     <div className="card flex flex-col items-center justify-center p-12 text-center">
-      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-ink-800 text-mist-500">
+      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-lienzo text-tinta-500">
         <Sparkles size={26} />
       </span>
-      <p className="mt-4 text-sm font-medium text-mist-300">Tu biblioteca esta vacia</p>
-      <p className="mt-1 max-w-sm text-sm text-mist-500">
+      <p className="mt-4 text-sm font-medium text-tinta-700">Tu biblioteca esta vacia</p>
+      <p className="mt-1 max-w-sm text-sm text-tinta-500">
         Analiza tu primer contenido tecnico y AthenIA empezara a construir tus metricas.
       </p>
       <Link to="/agregar" className="btn-primary mt-6">
@@ -156,10 +158,10 @@ export default function Dashboard() {
       {/* --- Saludo --- */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-mist-100">
+          <h1 className="text-2xl font-bold tracking-tight text-tinta-900">
             Hola, {nombreDePila()} <span className="inline-block">👋</span>
           </h1>
-          <p className="mt-1 text-sm text-mist-500">
+          <p className="mt-1 text-sm text-tinta-500">
             Este es el resumen de tu biblioteca de conocimiento tecnico.
           </p>
         </div>
@@ -185,10 +187,10 @@ export default function Dashboard() {
       {error && (
         <div
           role="alert"
-          className="flex items-start gap-2.5 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3.5"
+          className="flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-3.5"
         >
-          <AlertCircle size={17} className="mt-0.5 shrink-0 text-rose-400" />
-          <p className="text-sm text-rose-200">{error}</p>
+          <AlertCircle size={17} className="mt-0.5 shrink-0 text-rose-600" />
+          <p className="text-sm text-rose-700">{error}</p>
         </div>
       )}
 
@@ -239,10 +241,10 @@ export default function Dashboard() {
         <>
           <div className="grid gap-4 lg:grid-cols-5">
             <section className="card p-6 lg:col-span-3">
-              <h2 className="text-base font-semibold text-mist-100">
+              <h2 className="text-base font-semibold text-tinta-900">
                 Categorias mas estudiadas
               </h2>
-              <p className="mb-6 mt-1 text-sm text-mist-500">
+              <p className="mb-6 mt-1 text-sm text-tinta-500">
                 Distribucion del contenido clasificado por AthenIA.
               </p>
               <DonaCategorias
@@ -254,8 +256,8 @@ export default function Dashboard() {
             <section className="card flex flex-col p-6 lg:col-span-2">
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <h2 className="text-base font-semibold text-mist-100">Actividad reciente</h2>
-                  <p className="mt-1 text-sm text-mist-500">Ultimos contenidos analizados.</p>
+                  <h2 className="text-base font-semibold text-tinta-900">Actividad reciente</h2>
+                  <p className="mt-1 text-sm text-tinta-500">Ultimos contenidos analizados.</p>
                 </div>
                 {cargandoRecientes && <Spinner tamano={16} />}
               </div>
@@ -270,14 +272,14 @@ export default function Dashboard() {
                   : recientes.map((contenido) => (
                       <li
                         key={contenido.id}
-                        className="flex items-start gap-3 rounded-xl border border-ink-700 bg-ink-900 p-3"
+                        className="flex items-start gap-3 rounded-xl border border-linea bg-panel-suave p-3"
                       >
-                        <Clock size={15} className="mt-0.5 shrink-0 text-mist-500" />
+                        <Clock size={15} className="mt-0.5 shrink-0 text-tinta-500" />
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-mist-100">
+                          <p className="truncate text-sm font-medium text-tinta-900">
                             {contenido.titulo}
                           </p>
-                          <p className="text-xs text-mist-400">
+                          <p className="text-xs text-tinta-600">
                             {formatearFecha(contenido.creado_en)}
                           </p>
                         </div>
@@ -288,7 +290,7 @@ export default function Dashboard() {
 
               <Link
                 to="/buscar"
-                className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-400 hover:text-brand-300"
+                className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-700"
               >
                 Ver todo
                 <ArrowRight size={15} />
@@ -299,10 +301,10 @@ export default function Dashboard() {
           {/* --- Palabras clave mas frecuentes --- */}
           {analiticas.top_palabras_clave.length > 0 && (
             <section className="card p-6">
-              <h2 className="text-base font-semibold text-mist-100">
+              <h2 className="text-base font-semibold text-tinta-900">
                 Tecnologias mas frecuentes
               </h2>
-              <p className="mb-5 mt-1 text-sm text-mist-500">
+              <p className="mb-5 mt-1 text-sm text-tinta-500">
                 Palabras clave extraidas por el modelo en todo tu contenido.
               </p>
               <TopPalabrasClave palabras={analiticas.top_palabras_clave} />
@@ -311,10 +313,10 @@ export default function Dashboard() {
 
           {/* --- Panel de analiticas (Semana 4) --- */}
           <div>
-            <h2 className="mb-1 text-lg font-bold tracking-tight text-mist-100">
+            <h2 className="mb-1 text-lg font-bold tracking-tight text-tinta-900">
               Analiticas
             </h2>
-            <p className="mb-4 text-sm text-mist-500">
+            <p className="mb-4 text-sm text-tinta-500">
               Confianza del modelo, origenes y actividad en el tiempo.
             </p>
             <AnalyticsPanel analiticas={analiticas} cargando={false} />

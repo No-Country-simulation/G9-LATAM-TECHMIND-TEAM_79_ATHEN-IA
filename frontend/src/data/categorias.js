@@ -49,7 +49,41 @@ export const CATEGORIAS_REGLAS = [
   'Otros',
 ]
 
+/**
+ * Variante oscura de cada acento, para TEXTO sobre fondo claro.
+ *
+ * `COLORES_CATEGORIA` se diseño para el tema oscuro, donde los tonos claros
+ * resaltan. Sobre blanco esos mismos tonos fallan contraste de forma grave
+ * (sky-400 da 2.1:1, emerald-400 1.9:1, muy por debajo del 4.5:1 de AA).
+ *
+ * Se conservan los originales para RELLENOS de gráfico —una porción de dona es
+ * un elemento gráfico, no texto— y se usa esta escala para las etiquetas.
+ * Todos los valores superan 4.5:1 sobre `#ffffff`.
+ */
+export const COLORES_TEXTO_CATEGORIA = {
+  'Desarrollo de Software y Web': '#6d28d9',
+  'Ciencia de Datos y Analítica': '#0369a1',
+  'Cloud Computing y DevOps': '#047857',
+  'Inteligencia Artificial y ML': '#be185d',
+  'Ciberseguridad y Redes': '#be123c',
+
+  Backend: '#6d28d9',
+  'Data Science': '#0369a1',
+  DevOps: '#047857',
+  Frontend: '#b45309',
+  Cloud: '#be185d',
+  'Base de Datos': '#be123c',
+  Ciberseguridad: '#be123c',
+  Otros: '#475569',
+}
+
 const COLOR_POR_DEFECTO = COLORES_CATEGORIA.Otros
+const COLOR_TEXTO_POR_DEFECTO = '#475569'
+
+/** Color de la etiqueta de una categoria sobre fondo claro. */
+export function colorTextoDeCategoria(categoria) {
+  return COLORES_TEXTO_CATEGORIA[categoria] ?? COLOR_TEXTO_POR_DEFECTO
+}
 
 // Paleta de reserva para categorias que no estan en el mapa: si Data Science
 // reentrena con clases nuevas, siguen recibiendo un color estable en vez de
@@ -89,11 +123,12 @@ export function colorDeCategoria(categoria) {
  * a partir de valores dinamicos en tiempo de ejecucion.
  */
 export function estilosDeCategoria(categoria, { borde = false } = {}) {
-  const color = colorDeCategoria(categoria)
+  const acento = colorDeCategoria(categoria)
   return {
-    color,
-    backgroundColor: `${color}1f`,
-    ...(borde ? { border: `1px solid ${color}59` } : {}),
+    // El texto usa la variante oscura; el fondo, un tinte del acento al 14%.
+    color: colorTextoDeCategoria(categoria),
+    backgroundColor: `${acento}24`,
+    ...(borde ? { border: `1px solid ${acento}55` } : {}),
   }
 }
 

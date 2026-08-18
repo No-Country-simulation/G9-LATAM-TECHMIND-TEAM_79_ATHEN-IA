@@ -11,14 +11,14 @@ function BarraConfianza({ probabilidad, color }) {
   return (
     <div>
       <div className="mb-1.5 flex items-baseline justify-between">
-        <span className="text-xs font-medium uppercase tracking-wide text-mist-400">
+        <span className="text-xs font-medium uppercase tracking-wide text-tinta-600">
           Confianza del modelo
         </span>
-        <span className="text-sm font-bold text-mist-100">{porcentaje}%</span>
+        <span className="text-sm font-bold text-tinta-900">{porcentaje}%</span>
       </div>
 
       <div
-        className="h-2 w-full overflow-hidden rounded-full bg-ink-800"
+        className="h-2 w-full overflow-hidden rounded-full bg-lienzo"
         role="progressbar"
         aria-valuenow={porcentaje}
         aria-valuemin={0}
@@ -72,7 +72,7 @@ export default function AnalysisResult({
   return (
     <section className="card animate-fade-up overflow-hidden" aria-live="polite">
       {/* --- Encabezado --- */}
-      <div className="flex items-start gap-3 border-b border-ink-700 bg-ink-800/40 p-5">
+      <div className="flex items-start gap-3 border-b border-linea bg-panel-suave p-5">
         <span
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
           style={estilosDeCategoria(categoria)}
@@ -80,13 +80,13 @@ export default function AnalysisResult({
           <BrainCircuit size={20} />
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="text-base font-semibold text-mist-100">Resultado del Analisis</h2>
-          <p className="truncate text-sm text-mist-500">
+          <h2 className="text-base font-semibold text-tinta-900">Resultado del Analisis</h2>
+          <p className="truncate text-sm text-tinta-500">
             {titulo ? `"${titulo}"` : 'Analisis generado por AthenIA'}
           </p>
         </div>
         {id != null && (
-          <span className="shrink-0 rounded-lg border border-ink-700 px-2 py-1 text-[11px] text-mist-400">
+          <span className="shrink-0 rounded-lg border border-linea px-2 py-1 text-[11px] text-tinta-600">
             #{id}
           </span>
         )}
@@ -101,12 +101,12 @@ export default function AnalysisResult({
         {nivelConfianza === 'baja' && (
           <div
             role="status"
-            className="flex items-start gap-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3.5"
+            className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3.5"
           >
-            <AlertTriangle size={17} className="mt-0.5 shrink-0 text-amber-400" aria-hidden="true" />
+            <AlertTriangle size={17} className="mt-0.5 shrink-0 text-amber-600" aria-hidden="true" />
             <div>
-              <p className="text-sm font-medium text-amber-100">Confianza baja</p>
-              <p className="mt-0.5 text-xs leading-relaxed text-amber-100">
+              <p className="text-sm font-medium text-amber-800">Confianza baja</p>
+              <p className="mt-0.5 text-xs leading-relaxed text-amber-800">
                 El modelo no encontro senales claras en este texto. Revisa la
                 categoria antes de darla por buena, o agrega mas detalle tecnico
                 al contenido.
@@ -118,7 +118,7 @@ export default function AnalysisResult({
         {/* --- Categoria principal + confianza --- */}
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
-            <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-mist-400">
+            <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-tinta-600">
               Categoria principal
             </p>
             <CategoryBadge categoria={categoria} tamano="lg" conIcono />
@@ -133,7 +133,7 @@ export default function AnalysisResult({
 
         {/* --- Palabras clave --- */}
         <div>
-          <p className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-mist-400">
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-tinta-600">
             <Tag size={13} />
             Palabras clave detectadas
           </p>
@@ -147,7 +147,7 @@ export default function AnalysisResult({
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-mist-500">
+            <p className="text-sm text-tinta-500">
               No se detectaron tecnologias conocidas en este contenido.
             </p>
           )}
@@ -156,10 +156,10 @@ export default function AnalysisResult({
         {/* --- Resumen --- */}
         {resumen && (
           <div>
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-mist-400">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-tinta-600">
               Descripcion analizada
             </p>
-            <p className="rounded-xl border border-ink-700 bg-ink-900 p-3.5 text-sm leading-relaxed text-mist-300">
+            <p className="rounded-xl border border-linea bg-panel-suave p-3.5 text-sm leading-relaxed text-tinta-700">
               {resumen}
             </p>
           </div>
@@ -168,7 +168,7 @@ export default function AnalysisResult({
         {/* --- Categorias relacionadas --- */}
         {relacionadas.length > 0 && (
           <div>
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-mist-400">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-tinta-600">
               Categorias relacionadas
             </p>
             <ul className="flex flex-wrap gap-2">
@@ -182,9 +182,9 @@ export default function AnalysisResult({
         )}
 
         {/* --- Acciones --- */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ink-700 pt-5">
-          <p className="text-[11px] text-mist-400">
-            Procesado por <span className="text-mist-300">{modelo ?? 'AthenIA'}</span>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-linea pt-5">
+          <p className="text-[11px] text-tinta-600">
+            Procesado por <span className="text-tinta-700">{modelo ?? 'AthenIA'}</span>
           </p>
 
           <div className="flex flex-wrap gap-3">
@@ -197,7 +197,7 @@ export default function AnalysisResult({
               {guardando ? (
                 <Spinner tamano={16} />
               ) : guardado ? (
-                <Check size={16} className="text-emerald-400" />
+                <Check size={16} className="text-emerald-600" />
               ) : (
                 <Save size={16} />
               )}

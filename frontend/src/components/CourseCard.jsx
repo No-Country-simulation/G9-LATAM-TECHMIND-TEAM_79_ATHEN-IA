@@ -34,8 +34,8 @@ export default function CourseCard({ contenido, onVer }) {
         </span>
 
         <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-semibold leading-snug text-mist-100">{titulo}</h3>
-          <p className="mt-0.5 flex items-center gap-1.5 text-xs text-mist-400">
+          <h3 className="text-sm font-semibold leading-snug text-tinta-900">{titulo}</h3>
+          <p className="mt-0.5 flex items-center gap-1.5 text-xs text-tinta-600">
             {origen || 'Sin origen'}
             {creadoEn && (
               <>
@@ -56,7 +56,7 @@ export default function CourseCard({ contenido, onVer }) {
         </span>
       </div>
 
-      <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-mist-300">{descripcion}</p>
+      <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-tinta-700">{descripcion}</p>
 
       <ul className="mt-4 flex flex-wrap gap-1.5">
         <li>
@@ -65,13 +65,13 @@ export default function CourseCard({ contenido, onVer }) {
         {palabrasClave.slice(0, 3).map((palabra) => (
           <li
             key={palabra}
-            className="rounded-lg border border-ink-700 px-2 py-0.5 text-[11px] text-mist-400"
+            className="rounded-lg border border-linea px-2 py-0.5 text-[11px] text-tinta-600"
           >
             {palabra}
           </li>
         ))}
         {palabrasClave.length > 3 && (
-          <li className="px-1 py-0.5 text-[11px] text-mist-400">
+          <li className="px-1 py-0.5 text-[11px] text-tinta-600">
             +{palabrasClave.length - 3}
           </li>
         )}
@@ -81,7 +81,7 @@ export default function CourseCard({ contenido, onVer }) {
         <button
           type="button"
           onClick={() => onVer(contenido)}
-          className="mt-4 self-start text-xs font-semibold text-brand-400 transition-colors hover:text-brand-300"
+          className="mt-4 self-start text-xs font-semibold text-brand-600 transition-colors hover:text-brand-700"
         >
           Ver detalle
         </button>

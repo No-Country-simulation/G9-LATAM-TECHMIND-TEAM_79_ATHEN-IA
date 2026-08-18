@@ -84,7 +84,7 @@ export default function Sidebar({ abierto = false, onCerrar = () => {} }) {
       <aside
         className={[
           'fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col',
-          'border-r border-ink-700 bg-ink-900 p-4',
+          'border-r border-ink-700 bg-ink-900 p-4 text-mist-300',
           'transition-transform duration-300 lg:static lg:translate-x-0',
           abierto ? 'translate-x-0' : '-translate-x-full',
         ].join(' ')}
@@ -95,7 +95,9 @@ export default function Sidebar({ abierto = false, onCerrar = () => {} }) {
           <div className="flex items-center gap-2.5">
             <Logo className="h-9 w-9 text-brand-400" />
             <div className="leading-tight">
-              <p className="text-lg font-bold tracking-tight">
+              {/* Color explicito: sin el hereda del <body>, que en el tema
+                  claro es texto oscuro y aqui quedaria invisible. */}
+              <p className="text-lg font-bold tracking-tight text-mist-100">
                 Athen<span className="text-brand-400">IA</span>
               </p>
               <p className="text-[10px] uppercase tracking-widest text-mist-400">

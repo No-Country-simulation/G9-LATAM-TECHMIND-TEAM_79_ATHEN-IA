@@ -34,7 +34,7 @@ function EstadoBackend() {
   }, [])
 
   const colores = {
-    verificando: 'bg-mist-500',
+    verificando: 'bg-tinta-500',
     ok: 'bg-emerald-400',
     error: 'bg-rose-500',
   }
@@ -56,9 +56,9 @@ function EstadoBackend() {
 
   return (
     <div className="hidden items-center gap-2 md:flex" title={detalle}>
-      <div className="flex items-center gap-2 rounded-full border border-ink-700 bg-ink-850 px-3 py-1.5">
+      <div className="flex items-center gap-2 rounded-full border border-linea bg-panel px-3 py-1.5">
         <span className={`h-2 w-2 rounded-full ${colores[estado]}`} />
-        <span className="text-xs text-mist-400">{etiquetas[estado]}</span>
+        <span className="text-xs text-tinta-600">{etiquetas[estado]}</span>
       </div>
 
       {/* Distingue de un vistazo si responde el modelo entrenado o el fallback. */}
@@ -66,8 +66,8 @@ function EstadoBackend() {
         <span
           className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
             usaModeloReal
-              ? 'border-brand-500/50 bg-brand-600/20 text-brand-300'
-              : 'border-amber-500/40 bg-amber-500/10 text-amber-200'
+              ? 'border-brand-500/50 bg-brand-50 text-brand-600'
+              : 'border-amber-200 bg-amber-50 text-amber-800'
           }`}
         >
           {usaModeloReal ? 'Modelo IA' : 'Reglas'}
@@ -96,11 +96,11 @@ export default function Header({ onAbrirMenu = () => {}, usuario = USUARIO_DEMO.
   const avatar = iniciales(usuario)
 
   return (
-    <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-ink-700 bg-ink-900/85 px-4 py-3 backdrop-blur-md lg:px-8">
+    <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-linea bg-panel/90 px-4 py-3 backdrop-blur-md lg:px-8">
       <button
         type="button"
         onClick={onAbrirMenu}
-        className="rounded-lg p-2 text-mist-300 hover:bg-ink-800 lg:hidden"
+        className="rounded-lg p-2 text-tinta-700 hover:bg-lienzo lg:hidden"
         aria-label="Abrir menu"
       >
         <Menu size={20} />
@@ -110,7 +110,7 @@ export default function Header({ onAbrirMenu = () => {}, usuario = USUARIO_DEMO.
       <form onSubmit={buscar} className="relative flex-1 max-w-md" role="search">
         <Search
           size={16}
-          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-mist-500"
+          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-tinta-500"
         />
         <input
           type="search"
@@ -133,20 +133,20 @@ export default function Header({ onAbrirMenu = () => {}, usuario = USUARIO_DEMO.
           type="button"
           disabled
           title="Notificaciones (proximamente)"
-          className="relative rounded-lg p-2 text-mist-500 opacity-50 transition-colors"
+          className="relative rounded-lg p-2 text-tinta-500 opacity-50 transition-colors"
           aria-label="Notificaciones (proximamente)"
         >
           <Bell size={19} />
         </button>
 
         {/* Perfil */}
-        <div className="flex items-center gap-2.5 rounded-xl border border-ink-700 bg-ink-850 px-2.5 py-1.5">
+        <div className="flex items-center gap-2.5 rounded-xl border border-linea bg-panel px-2.5 py-1.5">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-xs font-bold text-white">
             {avatar}
           </span>
           <div className="hidden leading-tight sm:block">
-            <p className="text-xs font-semibold text-mist-100">{usuario}</p>
-            <p className="text-[10px] text-mist-400">{USUARIO_DEMO.rol}</p>
+            <p className="text-xs font-semibold text-tinta-900">{usuario}</p>
+            <p className="text-[10px] text-tinta-600">{USUARIO_DEMO.rol}</p>
           </div>
         </div>
       </div>

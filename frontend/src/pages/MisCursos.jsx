@@ -25,11 +25,11 @@ export default function MisCursos() {
       {/* --- Encabezado --- */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-mist-100">
-            <Library size={24} className="text-brand-400" aria-hidden="true" />
+          <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-tinta-900">
+            <Library size={24} className="text-brand-600" aria-hidden="true" />
             Mis Cursos
           </h1>
-          <p className="mt-1 text-sm text-mist-400">
+          <p className="mt-1 text-sm text-tinta-600">
             {cargando
               ? 'Cargando tu biblioteca…'
               : `${total} contenido${total === 1 ? '' : 's'} analizado${total === 1 ? '' : 's'}`}
@@ -52,10 +52,10 @@ export default function MisCursos() {
       {error && (
         <div
           role="alert"
-          className="flex items-start gap-2.5 rounded-xl border border-rose-500/50 bg-rose-500/15 p-3.5"
+          className="flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-3.5"
         >
-          <AlertCircle size={17} className="mt-0.5 shrink-0 text-rose-300" aria-hidden="true" />
-          <p className="text-sm text-rose-100">{error}</p>
+          <AlertCircle size={17} className="mt-0.5 shrink-0 text-rose-600" aria-hidden="true" />
+          <p className="text-sm text-rose-700">{error}</p>
         </div>
       )}
 
@@ -71,11 +71,11 @@ export default function MisCursos() {
       ) : (
         !error && (
           <div className="card flex flex-col items-center justify-center p-12 text-center">
-            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-ink-800 text-mist-400">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-lienzo text-tinta-600">
               <Library size={26} aria-hidden="true" />
             </span>
             <p className="mt-4 text-sm font-medium text-mist-200">Tu biblioteca esta vacia</p>
-            <p className="mt-1 max-w-sm text-sm text-mist-400">
+            <p className="mt-1 max-w-sm text-sm text-tinta-600">
               Analiza tu primer contenido tecnico y aparecera aqui, clasificado y
               con sus tecnologias detectadas.
             </p>

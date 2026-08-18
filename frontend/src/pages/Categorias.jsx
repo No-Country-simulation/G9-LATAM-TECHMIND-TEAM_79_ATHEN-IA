@@ -50,8 +50,8 @@ export default function Categorias() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-mist-100">Categorias</h1>
-        <p className="mt-1 text-sm text-mist-500">
+        <h1 className="text-2xl font-bold tracking-tight text-tinta-900">Categorias</h1>
+        <p className="mt-1 text-sm text-tinta-500">
           Areas de conocimiento que AthenIA reconoce al clasificar contenido.
         </p>
       </div>
@@ -59,10 +59,10 @@ export default function Categorias() {
       {sinBackend && (
         <div
           role="alert"
-          className="flex items-center gap-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3.5"
+          className="flex items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3.5"
         >
-          <AlertCircle size={17} className="shrink-0 text-amber-400" />
-          <p className="text-sm text-amber-100">
+          <AlertCircle size={17} className="shrink-0 text-amber-600" />
+          <p className="text-sm text-amber-800">
             No se pudo consultar el catalogo del backend. Mostrando las categorias locales.
           </p>
         </div>
@@ -90,13 +90,13 @@ export default function Categorias() {
                   </span>
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-mist-100">{categoria}</p>
-                    <p className="text-xs text-mist-400">
+                    <p className="truncate text-sm font-semibold text-tinta-900">{categoria}</p>
+                    <p className="text-xs text-tinta-600">
                       {cantidad} contenido{cantidad === 1 ? '' : 's'} en tu biblioteca
                     </p>
                   </div>
 
-                  <span className="text-lg font-bold text-mist-500 group-hover:text-brand-400">
+                  <span className="text-lg font-bold text-tinta-500 group-hover:text-brand-600">
                     {cantidad}
                   </span>
                 </Link>

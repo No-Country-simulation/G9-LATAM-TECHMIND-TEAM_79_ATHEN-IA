@@ -104,10 +104,10 @@ export default function ContentDetail({ contenido, onCerrar, onAbrirOtro }) {
         aria-labelledby="titulo-detalle"
         tabIndex={-1}
         onKeyDown={alTabular}
-        className="animate-fade-up relative flex h-full w-full max-w-xl flex-col overflow-y-auto border-l border-ink-700 bg-ink-950 shadow-2xl focus:outline-none sm:w-[min(100%,36rem)]"
+        className="animate-fade-up relative flex h-full w-full max-w-xl flex-col overflow-y-auto border-l border-linea bg-lienzo shadow-2xl focus:outline-none sm:w-[min(100%,36rem)]"
       >
         {/* --- Encabezado --- */}
-        <div className="sticky top-0 z-10 flex items-start gap-3 border-b border-ink-700 bg-ink-900/95 p-5 backdrop-blur">
+        <div className="sticky top-0 z-10 flex items-start gap-3 border-b border-linea bg-panel-suave/95 p-5 backdrop-blur">
           <span
             className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
             style={{ backgroundColor: `${color}1f`, color }}
@@ -117,10 +117,10 @@ export default function ContentDetail({ contenido, onCerrar, onAbrirOtro }) {
           </span>
 
           <div className="min-w-0 flex-1">
-            <h2 id="titulo-detalle" className="text-base font-semibold leading-snug text-mist-100">
+            <h2 id="titulo-detalle" className="text-base font-semibold leading-snug text-tinta-900">
               {contenido.titulo}
             </h2>
-            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-mist-400">
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-tinta-600">
               <span>{contenido.origen || 'Sin origen'}</span>
               {contenido.creado_en && (
                 <>
@@ -137,7 +137,7 @@ export default function ContentDetail({ contenido, onCerrar, onAbrirOtro }) {
           <button
             type="button"
             onClick={onCerrar}
-            className="rounded-lg p-1.5 text-mist-500 transition-colors hover:bg-ink-800 hover:text-mist-100"
+            className="rounded-lg p-1.5 text-tinta-500 transition-colors hover:bg-lienzo hover:text-tinta-900"
             aria-label="Cerrar detalle"
           >
             <X size={18} />
@@ -148,19 +148,19 @@ export default function ContentDetail({ contenido, onCerrar, onAbrirOtro }) {
           {/* --- Clasificación --- */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-mist-400">
+              <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-tinta-600">
                 Categoría
               </p>
               <CategoryBadge categoria={contenido.categoria} tamano="lg" conIcono />
             </div>
 
             <div>
-              <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-mist-400">
+              <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-tinta-600">
                 <Gauge size={12} aria-hidden="true" />
                 Confianza
               </p>
               <div
-                className="h-2 w-full overflow-hidden rounded-full bg-ink-800"
+                className="h-2 w-full overflow-hidden rounded-full bg-lienzo"
                 role="progressbar"
                 aria-valuenow={aPorcentaje(contenido.probabilidad)}
                 aria-valuemin={0}
@@ -175,7 +175,7 @@ export default function ContentDetail({ contenido, onCerrar, onAbrirOtro }) {
                   }}
                 />
               </div>
-              <p className="mt-1 text-sm font-bold text-mist-100">
+              <p className="mt-1 text-sm font-bold text-tinta-900">
                 {aPorcentaje(contenido.probabilidad)}%
               </p>
             </div>
@@ -184,7 +184,7 @@ export default function ContentDetail({ contenido, onCerrar, onAbrirOtro }) {
           {/* --- Palabras clave --- */}
           {contenido.informacion_adicional?.length > 0 && (
             <div>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-mist-400">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-tinta-600">
                 Palabras clave detectadas
               </p>
               <ul className="flex flex-wrap gap-2">
@@ -200,10 +200,10 @@ export default function ContentDetail({ contenido, onCerrar, onAbrirOtro }) {
           {/* --- Texto original --- */}
           {contenido.texto && (
             <div>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-mist-400">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-tinta-600">
                 Contenido analizado
               </p>
-              <p className="max-h-48 overflow-y-auto rounded-xl border border-ink-700 bg-ink-900 p-3.5 text-sm leading-relaxed text-mist-300">
+              <p className="max-h-48 overflow-y-auto rounded-xl border border-linea bg-panel-suave p-3.5 text-sm leading-relaxed text-tinta-700">
                 {contenido.texto}
               </p>
             </div>
@@ -214,7 +214,7 @@ export default function ContentDetail({ contenido, onCerrar, onAbrirOtro }) {
               href={contenido.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-400 hover:text-brand-300"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-700"
             >
               <LinkIcon size={14} aria-hidden="true" />
               Ver recurso original
@@ -222,7 +222,7 @@ export default function ContentDetail({ contenido, onCerrar, onAbrirOtro }) {
           )}
 
           {/* --- Recomendaciones --- */}
-          <div className="border-t border-ink-700 pt-5">
+          <div className="border-t border-linea pt-5">
             <Recomendaciones
               recomendaciones={recomendaciones}
               estrategia={estrategia}

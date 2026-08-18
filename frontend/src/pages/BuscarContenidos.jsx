@@ -96,8 +96,8 @@ export default function BuscarContenidos() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-mist-100">Buscar Contenidos</h1>
-        <p className="mt-1 text-sm text-mist-500">
+        <h1 className="text-2xl font-bold tracking-tight text-tinta-900">Buscar Contenidos</h1>
+        <p className="mt-1 text-sm text-tinta-500">
           Encuentra cursos, temas y tecnologias en tu biblioteca analizada.
         </p>
       </div>
@@ -106,7 +106,7 @@ export default function BuscarContenidos() {
       <div className="relative">
         <Search
           size={17}
-          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-mist-500"
+          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-tinta-500"
         />
         <input
           type="text"
@@ -123,7 +123,7 @@ export default function BuscarContenidos() {
             <button
               type="button"
               onClick={limpiarBusqueda}
-              className="rounded-md p-0.5 text-mist-500 hover:text-mist-100"
+              className="rounded-md p-0.5 text-tinta-500 hover:text-tinta-900"
               aria-label="Limpiar busqueda"
             >
               <X size={16} />
@@ -149,7 +149,7 @@ export default function BuscarContenidos() {
           className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors ${
             categoriaActiva === FILTRO_TODOS
               ? 'bg-brand-600 text-white'
-              : 'border border-ink-700 text-mist-300 hover:border-brand-500 hover:text-mist-100'
+              : 'border border-linea text-tinta-700 hover:border-brand-500 hover:text-tinta-900'
           }`}
         >
           Todos
@@ -179,7 +179,7 @@ export default function BuscarContenidos() {
       </div>
 
       {/* --- Estado de la consulta --- */}
-      <p className="text-sm text-mist-500">
+      <p className="text-sm text-tinta-500">
         {cargando ? (
           'Buscando...'
         ) : (
@@ -190,13 +190,13 @@ export default function BuscarContenidos() {
                 {filtros.buscar && (
                   <>
                     {' '}
-                    para <span className="text-mist-100">"{filtros.buscar}"</span>
+                    para <span className="text-tinta-900">"{filtros.buscar}"</span>
                   </>
                 )}
                 {categoriaActiva !== FILTRO_TODOS && (
                   <>
                     {' '}
-                    en <span className="text-mist-100">{categoriaActiva}</span>
+                    en <span className="text-tinta-900">{categoriaActiva}</span>
                   </>
                 )}
               </>
@@ -209,10 +209,10 @@ export default function BuscarContenidos() {
       {error && (
         <div
           role="alert"
-          className="flex items-start gap-2.5 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3.5"
+          className="flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-3.5"
         >
-          <AlertCircle size={17} className="mt-0.5 shrink-0 text-rose-400" />
-          <p className="text-sm text-rose-200">{error}</p>
+          <AlertCircle size={17} className="mt-0.5 shrink-0 text-rose-600" />
+          <p className="text-sm text-rose-700">{error}</p>
         </div>
       )}
 
@@ -232,11 +232,11 @@ export default function BuscarContenidos() {
       ) : (
         !error && (
           <div className="card flex flex-col items-center justify-center p-12 text-center">
-            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-ink-800 text-mist-500">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-lienzo text-tinta-500">
               <SearchX size={26} />
             </span>
-            <p className="mt-4 text-sm font-medium text-mist-300">Sin resultados</p>
-            <p className="mt-1 max-w-sm text-sm text-mist-500">
+            <p className="mt-4 text-sm font-medium text-tinta-700">Sin resultados</p>
+            <p className="mt-1 max-w-sm text-sm text-tinta-500">
               {hayFiltros
                 ? 'No encontramos contenido que coincida. Prueba con otro termino o quita el filtro de categoria.'
                 : 'Aun no has analizado contenido. Ve a "Agregar Curso" para empezar.'}

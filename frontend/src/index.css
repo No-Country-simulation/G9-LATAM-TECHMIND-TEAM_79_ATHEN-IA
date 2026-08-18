@@ -1,35 +1,70 @@
 @import "tailwindcss";
 
 /* =========================================================================
-   Branding AthenIA - paleta oscura / morada
-   Tailwind v4 genera utilidades a partir de estos tokens:
-   --color-brand-500  ->  bg-brand-500 / text-brand-500 / border-brand-500
+   Sistema de diseño AthenIA
+   =========================================================================
+
+   El mockup de producción define DOS regiones con tratamiento opuesto:
+
+     · Sidebar  -> superficie oscura (Deep Indigo), texto claro.
+     · Contenido -> lienzo claro, tarjetas blancas, texto oscuro.
+
+   Por eso conviven dos familias de tokens. No son intercambiables: usar
+   `text-mist-*` sobre una tarjeta blanca deja el texto casi invisible.
+
+     ink-*  / mist-*   -> SOLO dentro del Sidebar (fondo oscuro)
+     lienzo / panel /
+     linea  / tinta-*  -> resto de la aplicación (fondo claro)
+
+   Tailwind v4 genera las utilidades a partir de estos tokens:
+   `--color-panel` -> `bg-panel`, `--color-tinta-600` -> `text-tinta-600`.
    ========================================================================= */
 @theme {
-  /* Superficies */
-  --color-ink-950: #08060f;
-  --color-ink-900: #0d0a17;
-  --color-ink-850: #131022;
-  --color-ink-800: #1a1530;
-  --color-ink-700: #241d40;
-  --color-ink-600: #322858;
+  /* --- Superficies oscuras (Sidebar) ------------------------------------ */
+  --color-ink-950: #0f1120;
+  --color-ink-900: #131525;
+  --color-ink-850: #1a1c30;
+  --color-ink-800: #23263d;
+  --color-ink-700: #2e3150;
+  --color-ink-600: #3d4166;
 
-  /* Morado AthenIA */
+  /* --- Texto sobre oscuro (Sidebar) ------------------------------------- */
+  --color-mist-100: #f5f6fb;
+  --color-mist-300: #c8cbe0;
+  --color-mist-400: #a3a7c4;
+  --color-mist-500: #8b8fae;
+
+  /* --- Superficies claras (área principal) ------------------------------ */
+  --color-lienzo: #f4f6f8; /* fondo de la zona de contenido */
+  --color-panel: #ffffff; /* tarjetas */
+  --color-panel-suave: #f8fafc; /* zonas hundidas dentro de una tarjeta */
+  --color-linea: #e6e9ef; /* bordes sutiles */
+  --color-linea-fuerte: #d3d8e2; /* bordes de campos de formulario */
+
+  /* --- Texto sobre claro -------------------------------------------------
+     Contraste medido sobre `panel` (#ffffff):
+       tinta-900  16.9:1   títulos y cifras
+       tinta-700  10.4:1   texto de lectura
+       tinta-600   7.6:1   texto secundario
+       tinta-500   5.2:1   texto terciario
+     Medido tambien sobre `lienzo` (#f4f6f8), que es ligeramente mas oscuro:
+     ahi `tinta-500` da 4.80:1. Con el valor anterior (#64748b) se quedaba en
+     4.39:1 — por debajo de AA — y el fallo solo aparecia fuera de las tarjetas.
+     Nunca bajar de `tinta-500` para texto informativo. */
+  --color-tinta-900: #0f172a;
+  --color-tinta-700: #334155;
+  --color-tinta-600: #475569;
+  --color-tinta-500: #5f6e82;
+
+  /* --- Morado AthenIA ---------------------------------------------------- */
+  --color-brand-50: #f5f3ff;
+  --color-brand-100: #ede9fe;
+  --color-brand-200: #ddd6fe;
   --color-brand-300: #c4b5fd;
   --color-brand-400: #a78bfa;
   --color-brand-500: #8b5cf6;
   --color-brand-600: #7c3aed;
   --color-brand-700: #6d28d9;
-
-  /* Texto.
-     `mist-400` se anadio en la Semana 5 para el texto secundario pequeno
-     (11-13 px). `mist-500` cumple AA sobre las superficies oscuras (5.2-5.9:1)
-     pero a ese tamano cuesta leerlo en pantallas de portatil; `mist-400` sube
-     a 7.0-8.0:1 sin romper la jerarquia visual frente a `mist-300`. */
-  --color-mist-100: #f1eefb;
-  --color-mist-300: #c9c2e3;
-  --color-mist-400: #a79ec4;
-  --color-mist-500: #8f86ad;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
@@ -42,58 +77,71 @@
   }
 
   body {
-    @apply bg-ink-950 text-mist-100 font-sans antialiased;
+    @apply bg-lienzo text-tinta-900 font-sans antialiased;
   }
 
-  /* Scrollbar acorde al tema oscuro */
+  /* Scrollbar discreta, acorde al lienzo claro. */
   ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
   }
   ::-webkit-scrollbar-track {
-    @apply bg-ink-900;
+    @apply bg-lienzo;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-ink-700 rounded-full;
+    @apply bg-linea-fuerte rounded-full;
   }
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-ink-600;
+    @apply bg-tinta-500;
   }
 
-  /* Foco visible y consistente para accesibilidad (QA lo valida) */
+  /* El Sidebar es oscuro: su scrollbar necesita el tratamiento inverso. */
+  .scrollbar-oscura::-webkit-scrollbar-track {
+    @apply bg-ink-900;
+  }
+  .scrollbar-oscura::-webkit-scrollbar-thumb {
+    @apply bg-ink-700;
+  }
+
+  /* Foco visible y consistente para accesibilidad (QA lo valida). */
   :focus-visible {
-    @apply outline-2 outline-offset-2 outline-brand-400;
+    @apply outline-2 outline-offset-2 outline-brand-500;
   }
 }
 
 @layer components {
+  /* Tarjeta blanca con sombra muy sutil: la jerarquía la da la elevación,
+     no un borde marcado. */
   .card {
-    @apply bg-ink-850 border border-ink-700 rounded-2xl;
+    @apply bg-panel border border-linea rounded-2xl shadow-sm;
   }
 
   .input-base {
-    @apply w-full bg-ink-900 border border-ink-700 rounded-xl px-4 py-2.5
-           text-sm text-mist-100 placeholder:text-mist-500
-           transition-colors focus:border-brand-500 focus:outline-none;
+    @apply w-full bg-panel border border-linea-fuerte rounded-xl px-4 py-2.5
+           text-sm text-tinta-900 placeholder:text-tinta-500
+           transition-colors focus:border-brand-500
+           focus:ring-2 focus:ring-brand-500/20 focus:outline-none;
   }
 
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 rounded-xl
            bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white
-           transition-colors hover:bg-brand-500
+           shadow-sm transition-colors hover:bg-brand-700
            disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 rounded-xl
-           border border-ink-700 bg-transparent px-5 py-2.5 text-sm
-           font-semibold text-mist-300 transition-colors
-           hover:border-brand-500 hover:text-mist-100;
+           border border-linea-fuerte bg-panel px-5 py-2.5 text-sm
+           font-semibold text-tinta-700 transition-colors
+           hover:border-brand-400 hover:text-brand-700
+           disabled:cursor-not-allowed disabled:opacity-50;
   }
 
+  /* Píldora de palabra clave: lila muy claro sobre blanco. */
   .badge {
-    @apply inline-flex items-center rounded-lg bg-ink-800 px-2.5 py-1
-           text-xs font-medium text-brand-300 border border-ink-700;
+    @apply inline-flex items-center rounded-lg bg-brand-50 px-2.5 py-1
+           text-xs font-medium text-brand-700 border border-brand-100;
   }
 }
 

@@ -1,7 +1,7 @@
 import { Sparkles, ArrowRight, Link2 } from 'lucide-react'
 import CategoryBadge from './CategoryBadge'
 import { Skeleton } from './Loaders'
-import { aPorcentaje, colorDeCategoria } from '../data/categorias'
+import { aPorcentaje, estilosDeCategoria } from '../data/categorias'
 
 /**
  * Lista de contenido relacionado.
@@ -28,13 +28,13 @@ export default function Recomendaciones({
       <div className="mb-3 flex items-center justify-between gap-3">
         <h3
           id="titulo-recomendaciones"
-          className="flex items-center gap-2 text-sm font-semibold text-mist-100"
+          className="flex items-center gap-2 text-sm font-semibold text-tinta-900"
         >
-          <Sparkles size={15} className="text-brand-400" aria-hidden="true" />
+          <Sparkles size={15} className="text-brand-600" aria-hidden="true" />
           Contenido relacionado
         </h3>
         {estrategia && !cargando && (
-          <span className="hidden text-[11px] text-mist-400 sm:inline" title="Motor de recomendación">
+          <span className="hidden text-[11px] text-tinta-600 sm:inline" title="Motor de recomendación">
             {estrategia}
           </span>
         )}
@@ -51,13 +51,13 @@ export default function Recomendaciones({
       )}
 
       {!cargando && error && (
-        <p role="alert" className="rounded-xl border border-rose-500/40 bg-rose-500/10 p-3 text-sm text-rose-200">
+        <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
           {error}
         </p>
       )}
 
       {!cargando && !error && recomendaciones.length === 0 && (
-        <p className="rounded-xl border border-ink-700 bg-ink-900 p-4 text-sm text-mist-500">
+        <p className="rounded-xl border border-linea bg-panel-suave p-4 text-sm text-tinta-500">
           Todavía no encontramos contenido parecido. Analiza más cursos y AthenIA
           empezará a relacionarlos.
         </p>
@@ -71,15 +71,15 @@ export default function Recomendaciones({
                 type="button"
                 onClick={() => onAbrir?.(item)}
                 disabled={!onAbrir}
-                className="group w-full rounded-xl border border-ink-700 bg-ink-900 p-3.5 text-left transition-colors hover:border-brand-500/50 disabled:cursor-default disabled:hover:border-ink-700"
+                className="group w-full rounded-xl border border-linea bg-panel-suave p-3.5 text-left transition-colors hover:border-brand-500/50 disabled:cursor-default disabled:hover:border-linea"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-mist-100">{item.titulo}</p>
+                    <p className="truncate text-sm font-medium text-tinta-900">{item.titulo}</p>
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                       <CategoryBadge categoria={item.categoria} tamano="sm" />
                       {item.origen && (
-                        <span className="text-[11px] text-mist-400">{item.origen}</span>
+                        <span className="text-[11px] text-tinta-600">{item.origen}</span>
                       )}
                     </div>
                   </div>
@@ -87,10 +87,7 @@ export default function Recomendaciones({
                   <div className="flex shrink-0 items-center gap-2">
                     <span
                       className="rounded-lg px-2 py-1 text-[11px] font-bold"
-                      style={{
-                        backgroundColor: `${colorDeCategoria(item.categoria)}1f`,
-                        color: colorDeCategoria(item.categoria),
-                      }}
+                      style={estilosDeCategoria(item.categoria)}
                       title={`Relevancia: ${aPorcentaje(item.puntaje)}%`}
                     >
                       {aPorcentaje(item.puntaje)}%
@@ -98,7 +95,7 @@ export default function Recomendaciones({
                     {onAbrir && (
                       <ArrowRight
                         size={15}
-                        className="text-mist-500 transition-colors group-hover:text-brand-400"
+                        className="text-tinta-500 transition-colors group-hover:text-brand-600"
                         aria-hidden="true"
                       />
                     )}
@@ -107,13 +104,13 @@ export default function Recomendaciones({
 
                 {/* La evidencia: por que se recomendo este contenido. */}
                 {item.palabras_compartidas?.length > 0 && (
-                  <p className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px] text-mist-400">
+                  <p className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px] text-tinta-600">
                     <Link2 size={11} aria-hidden="true" />
                     <span>Comparten:</span>
                     {item.palabras_compartidas.slice(0, 4).map((palabra) => (
                       <span
                         key={palabra}
-                        className="rounded border border-ink-700 px-1.5 py-0.5 text-brand-300"
+                        className="rounded border border-linea px-1.5 py-0.5 text-brand-700"
                       >
                         {palabra}
                       </span>
