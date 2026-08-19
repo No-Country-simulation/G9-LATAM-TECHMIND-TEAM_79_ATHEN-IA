@@ -1,8 +1,12 @@
 name: QA & Backend CI/CD
 
 on:
+  # Sin filtro de rama a proposito. El patron anterior era
+  # `[ "main", "feature/*" ]`, que NO cubria ramas como
+  # `desarrollo_buscador_cursos`: el CI nunca corrio sobre ellas y llegaron a
+  # `origin` con dependencias sin declarar y una ruta duplicada. Cualquier rama
+  # que se empuje debe validarse.
   push:
-    branches: [ "main", "feature/*" ]
   pull_request:
     branches: [ "main" ]
 
@@ -27,6 +31,11 @@ jobs:
     - name: Instalar dependencias
       run: |
         python -m pip install --upgrade pip setuptools wheel
+        # torch se instala primero desde el indice CPU-only. Sin esto, pip
+        # resuelve la variante con CUDA que arrastra `sentence-transformers`
+        # (~2.5 GB de binarios de GPU) en un runner que no tiene GPU: minutos
+        # de descarga por cada ejecucion del CI.
+        pip install torch --index-url https://download.pytorch.org/whl/cpu
         pip install -r backend/requirements.txt
 
     - name: Ejecutar pruebas y verificar cobertura (mínimo 85%)

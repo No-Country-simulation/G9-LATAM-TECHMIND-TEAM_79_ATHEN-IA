@@ -1,12 +1,20 @@
-import { BookOpen, Calendar } from 'lucide-react'
+import { BookOpen, Calendar, ExternalLink } from 'lucide-react'
 import CategoryBadge from './CategoryBadge'
 import { aPorcentaje, estilosDeCategoria, formatearFecha } from '../data/categorias'
 
 /**
- * Tarjeta de un contenido ya analizado. La usa la vista Buscar Contenidos.
+ * Tarjeta de curso o contenido analizado.
  *
- * @param {object}   contenido  Registro devuelto por `GET /contenidos`.
- * @param {Function} [onVer]    Callback al pulsar la tarjeta.
+ * Sirve a dos fuentes distintas y se adapta a cada una:
+ *
+ *   historial (`GET /contenidos`)  -> abre el detalle con recomendaciones
+ *   catalogo  (`GET /cursos`)      -> enlaza a la plataforma del curso
+ *
+ * Un curso del catalogo no esta en el historial, asi que no tiene detalle ni
+ * recomendaciones que mostrar: su accion util es ir a hacerlo.
+ *
+ * @param {object}   contenido  Registro del historial o curso del catalogo.
+ * @param {Function} [onVer]    Callback al pulsar (solo items del historial).
  */
 export default function CourseCard({ contenido, onVer }) {
   const {
@@ -18,10 +26,17 @@ export default function CourseCard({ contenido, onVer }) {
     informacion_adicional: palabrasClave = [],
     origen,
     creado_en: creadoEn,
+    url,
+    esCatalogo,
   } = contenido
 
   const descripcion = resumen || texto
-  const confianza = aPorcentaje(probabilidad)
+
+  // `null` significa "no se midio afinidad" (navegacion del catalogo), que no
+  // es lo mismo que 0%. En ese caso no se muestra el badge en vez de mentir
+  // con un 0% que el usuario leeria como "sin relacion".
+  const hayPuntaje = typeof probabilidad === 'number'
+  const confianza = hayPuntaje ? aPorcentaje(probabilidad) : null
 
   return (
     <article className="card group flex flex-col p-5 transition-colors hover:border-brand-500/50">
@@ -47,13 +62,19 @@ export default function CourseCard({ contenido, onVer }) {
           </p>
         </div>
 
-        <span
-          className="shrink-0 rounded-lg px-2 py-1 text-xs font-bold"
-          style={estilosDeCategoria(categoria)}
-          title="Confianza de la clasificacion"
-        >
-          {confianza}%
-        </span>
+        {hayPuntaje && (
+          <span
+            className="shrink-0 rounded-lg px-2 py-1 text-xs font-bold"
+            style={estilosDeCategoria(categoria)}
+            title={
+              esCatalogo
+                ? 'Afinidad semantica con tu busqueda'
+                : 'Confianza de la clasificacion'
+            }
+          >
+            {confianza}%
+          </span>
+        )}
       </div>
 
       <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-tinta-700">{descripcion}</p>
@@ -77,14 +98,28 @@ export default function CourseCard({ contenido, onVer }) {
         )}
       </ul>
 
-      {onVer && (
-        <button
-          type="button"
-          onClick={() => onVer(contenido)}
-          className="mt-4 self-start text-xs font-semibold text-brand-600 transition-colors hover:text-brand-700"
-        >
-          Ver detalle
-        </button>
+      {esCatalogo ? (
+        url && (
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex items-center gap-1.5 self-start text-xs font-semibold text-brand-600 transition-colors hover:text-brand-700"
+          >
+            Ver curso en {origen}
+            <ExternalLink size={12} aria-hidden="true" />
+          </a>
+        )
+      ) : (
+        onVer && (
+          <button
+            type="button"
+            onClick={() => onVer(contenido)}
+            className="mt-4 self-start text-xs font-semibold text-brand-600 transition-colors hover:text-brand-700"
+          >
+            Ver detalle
+          </button>
+        )
       )}
     </article>
   )

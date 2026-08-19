@@ -485,6 +485,147 @@ class ErrorResponse(BaseModel):
     )
 
 
+# ===========================================================================
+# Busqueda vectorial de cursos
+# ===========================================================================
+
+
+class CursoEncontrado(BaseModel):
+    """
+    Una coincidencia de `GET /cursos/buscar`.
+
+    Es el contrato que consumen las tarjetas del Dashboard. La version
+    original devolvia un `dict` suelto, sin `response_model`, con claves en
+    espanol y **sin puntaje**: el frontend no podia ordenar ni mostrar la
+    afinidad, y cualquier cambio en el backend pasaba desapercibido porque no
+    habia esquema que validara la salida.
+    """
+
+    id: str = Field(
+        ...,
+        description="Identificador estable del curso dentro del indice.",
+        examples=["curso_1423"],
+    )
+    title: str = Field(..., description="Titulo del curso.")
+    description: str = Field(
+        default="",
+        description="Resumen corto del curso (hasta 500 caracteres).",
+    )
+    category: str = Field(
+        ...,
+        description="Area tematica del curso.",
+        examples=["Ciencia de Datos y Analitica"],
+    )
+    url: str = Field(default="", description="Enlace al curso. Vacio si el dataset no lo trae.")
+    site: str = Field(default="Desconocido", description="Plataforma que lo publica.")
+    image: str = Field(
+        default="",
+        description=(
+            "Portada del curso. Hoy siempre vacia: el dataset entregado por Data no "
+            "trae ninguna columna de imagen (se revisaron las 52). El campo forma "
+            "parte del contrato para que el frontend no cambie cuando el ETL la "
+            "incorpore; mientras tanto la tarjeta usa su icono por categoria."
+        ),
+    )
+    match_score: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "Afinidad semantica con la consulta (similitud coseno). "
+            "1.0 = identico, 0.0 = sin relacion. "
+            "`null` al navegar el catalogo con `GET /cursos`: no hay consulta "
+            "contra la que medir afinidad, que no es lo mismo que afinidad cero."
+        ),
+        examples=[0.78],
+    )
+
+
+class RespuestaBusquedaCursos(BaseModel):
+    """Respuesta completa de `GET /cursos/buscar`."""
+
+    busqueda: str = Field(..., description="Consulta tal como se recibio.")
+    total: int = Field(..., ge=0, description="Cantidad de cursos devueltos.")
+    min_score: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Umbral de relevancia aplicado. Los cursos por debajo se descartaron.",
+    )
+    total_indexado: int = Field(
+        ...,
+        ge=0,
+        description="Cursos disponibles en el indice vectorial.",
+    )
+    resultados: List[CursoEncontrado] = Field(
+        default_factory=list,
+        description="Coincidencias ordenadas de mayor a menor afinidad.",
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "busqueda": "aprender python para analisis de datos",
+                    "total": 2,
+                    "min_score": 0.35,
+                    "total_indexado": 8109,
+                    "resultados": [
+                        {
+                            "id": "curso_1423",
+                            "title": "Python for Data Science",
+                            "description": "Aprende pandas, numpy y visualizacion.",
+                            "category": "Ciencia de Datos y Analitica",
+                            "url": "https://www.coursera.org/learn/python-data",
+                            "site": "Coursera",
+                            "image": "",
+                            "match_score": 0.78,
+                        }
+                    ],
+                }
+            ]
+        }
+    )
+
+
+class CategoriaCatalogo(BaseModel):
+    """Una categoria del catalogo de cursos, con cuantos cursos contiene."""
+
+    nombre: str = Field(..., description="Nombre de la categoria.")
+    total: int = Field(..., ge=0, description="Cursos indexados en esta categoria.")
+
+
+class RespuestaCatalogoCursos(BaseModel):
+    """
+    Respuesta de `GET /cursos` — navegacion del catalogo sin consulta.
+
+    Distinta de `RespuestaBusquedaCursos` a proposito: aqui no hay consulta ni
+    umbral, y `match_score` viaja como `null` en cada curso.
+    """
+
+    total: int = Field(..., ge=0, description="Cursos devueltos en esta pagina.")
+    total_indexado: int = Field(..., ge=0, description="Cursos en todo el indice.")
+    categoria: Optional[str] = Field(
+        default=None,
+        description="Categoria por la que se filtro, o `null` si no se filtro.",
+    )
+    desplazamiento: int = Field(..., ge=0, description="Cursos omitidos (paginacion).")
+    items: List[CursoEncontrado] = Field(
+        default_factory=list,
+        description="Cursos del catalogo, en el orden del indice.",
+    )
+
+
+class RespuestaCategoriasCatalogo(BaseModel):
+    """Respuesta de `GET /cursos/categorias`."""
+
+    total: int = Field(..., ge=0, description="Cantidad de categorias distintas.")
+    items: List[CategoriaCatalogo] = Field(
+        default_factory=list,
+        description="Categorias del catalogo, de mas a menos cursos.",
+    )
+
+
 # Resuelve las referencias adelantadas usadas en `MetricasOutput` y
 # `AnaliticasOutput` (ambos citan `ConteoPalabraClave` antes de su definicion).
 MetricasOutput.model_rebuild()

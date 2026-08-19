@@ -27,7 +27,6 @@ from ..schemas import (
     MetricasOutput,
     RecomendacionItem,
 )
-
 logger = logging.getLogger("athenia.routers.contenido")
 
 router = APIRouter(tags=["Contenido"])
@@ -208,3 +207,4 @@ def metricas(
 ) -> MetricasOutput:
     """Agregados que alimentan las tarjetas y el grafico del Dashboard."""
     return MetricasOutput(**services.calcular_metricas(repositorio.listar()))
+

@@ -34,6 +34,8 @@ resuelve `Depends(get_clasificador)` en cada peticion, asi que:
 from __future__ import annotations
 
 from . import services
+from .busqueda.almacen import AlmacenChroma
+from .busqueda.servicio import BuscadorCursos
 from .domain.protocols import Clasificador, MotorRecomendaciones, RepositorioContenidos
 from .recomendador import RecomendadorPorKeywords
 
@@ -41,6 +43,15 @@ from .recomendador import RecomendadorPorKeywords
 # sobre los candidatos que recibe), asi que compartirla entre peticiones es
 # seguro y evita reconstruirla en cada request.
 _recomendador = RecomendadorPorKeywords()
+
+# Instancia unica del buscador de cursos. `AlmacenChroma` abre la base
+# vectorial de forma perezosa —la primera busqueda paga la carga del modelo,
+# las siguientes no—, asi que construirlo aqui no ralentiza el arranque.
+#
+# La version original abria un `PersistentClient` y reinstanciaba el
+# `SentenceTransformer` en CADA peticion: cientos de milisegundos por busqueda
+# y varias copias del modelo en memoria bajo carga concurrente.
+_buscador_cursos = BuscadorCursos(AlmacenChroma())
 
 
 def get_clasificador() -> Clasificador:
@@ -70,3 +81,19 @@ def get_recomendador() -> MotorRecomendaciones:
     `Protocol` `MotorRecomendaciones`, no de `RecomendadorPorKeywords`.
     """
     return _recomendador
+
+
+def get_buscador_cursos() -> BuscadorCursos:
+    """
+    Devuelve el buscador semantico de cursos.
+
+    Punto unico de sustitucion del indice vectorial: migrar de ChromaDB a
+    Oracle AI Vector Search es cambiar el almacen que se inyecta arriba, sin
+    tocar la ruta `/cursos/buscar` ni `busqueda.servicio`.
+
+    En pruebas se sustituye con
+    `app.dependency_overrides[get_buscador_cursos] = lambda: doble`, lo que
+    permite ejercitar la ruta completa sin la base vectorial de 26 MB ni el
+    modelo de embeddings.
+    """
+    return _buscador_cursos

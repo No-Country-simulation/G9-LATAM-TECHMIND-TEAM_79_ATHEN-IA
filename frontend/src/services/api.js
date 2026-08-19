@@ -74,22 +74,126 @@ export function analizarContenido({ titulo, texto, origen, url }) {
 }
 
 // ---------------------------------------------------------------------------
-// Historial
+// Historial de analisis
 // ---------------------------------------------------------------------------
 
 /**
- * GET /contenidos - historial de analisis, del mas reciente al mas antiguo.
+ * Traduce un curso de `GET /cursos[/buscar]` a la forma que renderizan las
+ * tarjetas del historial, para que ambas fuentes compartan componente.
+ *
+ * `match_score` llega en 0..1 (similitud coseno) y se mapea a `probabilidad`,
+ * que es la escala 0..1 que ya usa `aPorcentaje()` en el resto de la app.
+ *
+ * @param {{id:string, title:string, description:string, category:string,
+ *          url:string, site:string, match_score:number}} curso
+ */
+function mapearCurso(curso, indice) {
+  return {
+    // El id del indice es estable ("curso_1423"). Antes se caia a
+    // `Math.random()`, que genera una key distinta en CADA render y obliga a
+    // React a desmontar y remontar toda la lista.
+    id: curso?.id ?? `curso_${indice}`,
+    titulo: curso?.title || 'Sin título',
+    origen: curso?.site || 'Curso',
+    categoria: curso?.category || 'Otras Áreas',
+    // OJO con el rango: `aPorcentaje()` multiplica por 100. El respaldo
+    // anterior era `?? 100`, asi que sin puntaje del backend las tarjetas
+    // mostraban "10000%".
+    // `null` al navegar el catalogo: no hubo consulta contra la que medir
+    // afinidad. La tarjeta oculta el badge en ese caso, en vez de mostrar 0%.
+    probabilidad: typeof curso?.match_score === 'number' ? curso.match_score : null,
+    texto: curso?.description || '',
+    url: curso?.url || '',
+    imagen: curso?.image || '',
+    // Marca el origen para que la UI sepa que este item NO esta en el
+    // historial: no tiene detalle ni recomendaciones, se abre en su plataforma.
+    esCatalogo: true,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Catalogo de cursos (+8.000 registros indexados en ChromaDB)
+// ---------------------------------------------------------------------------
+
+/**
+ * GET /cursos - navega el catalogo SIN consulta semantica.
+ *
+ * Es lo que permite mostrar cursos reales nada mas cargar la vista. Antes de
+ * que existiera, la unica via al catalogo era `/cursos/buscar`, que exige un
+ * texto; sin el, la interfaz caia al historial de analisis (8 registros de
+ * demo) y parecia que el catalogo no estuviera conectado.
+ *
+ * @param {{categoria?: string, limite?: number, desplazamiento?: number}} opciones
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<{total:number, items:object[]}>}
+ */
+export async function obtenerCursos({ categoria, limite = 24, desplazamiento = 0 } = {}, signal) {
+  const data = await peticion(() =>
+    api.get('/cursos', {
+      params: {
+        ...(categoria && { categoria }),
+        limite,
+        desplazamiento,
+      },
+      signal,
+    }),
+  )
+  return {
+    total: data.total_indexado ?? data.total ?? 0,
+    items: (data.items ?? []).map(mapearCurso),
+  }
+}
+
+/**
+ * GET /cursos/buscar - busqueda semantica en el catalogo.
+ *
+ * @param {{q: string, limite?: number, minScore?: number}} opciones
+ * @param {AbortSignal} [signal]
+ */
+export async function buscarCursos({ q, limite = 24, minScore }, signal) {
+  const data = await peticion(() =>
+    api.get('/cursos/buscar', {
+      params: { q, limite, ...(minScore != null && { min_score: minScore }) },
+      signal,
+    }),
+  )
+  return {
+    total: data.total ?? 0,
+    items: (data.resultados ?? []).map(mapearCurso),
+  }
+}
+
+/**
+ * GET /cursos/categorias - categorias reales del catalogo, con su conteo.
+ *
+ * Distinto de `obtenerCategorias()`, que devuelve las clases del clasificador
+ * (`clasificador_cursos.pkl`). Son catalogos distintos: filtrar el catalogo por
+ * una categoria que solo existe en el clasificador daria siempre cero.
+ */
+export async function obtenerCategoriasCursos(signal) {
+  const data = await peticion(() => api.get('/cursos/categorias', { signal }))
+  return data.items ?? []
+}
+
+/**
+ * GET /contenidos - historial de analisis del usuario, con filtros del backend.
+ *
+ * Para el catalogo de +8.000 cursos usa `obtenerCursos` / `buscarCursos`.
  *
  * @param {{categoria?: string, buscar?: string, limite?: number}} filtros
  * @param {AbortSignal} [signal] Para cancelar busquedas que quedaron obsoletas.
  * @returns {Promise<{total: number, items: object[]}>}
  */
 export function obtenerContenidos(filtros = {}, signal) {
-  // Se omiten los filtros vacios para no ensuciar la query string.
-  const params = Object.fromEntries(
+  // Solo el historial. Esta funcion tuvo una rama que desviaba a
+  // `/cursos/buscar` cuando habia termino de busqueda, y hacia que la vista
+  // "Mi biblioteca" devolviera cursos del catalogo en vez del historial del
+  // usuario. Consultar el catalogo es responsabilidad de `useCursos` /
+  // `buscarCursos`: una funcion, un endpoint.
+  const parametros = Object.fromEntries(
     Object.entries(filtros).filter(([, valor]) => valor !== '' && valor != null),
   )
-  return peticion(() => api.get('/contenidos', { params, signal }))
+  return peticion(() => api.get('/contenidos', { params: parametros, signal }))
 }
 
 /** GET /contenidos/{id} - detalle de un analisis. */
