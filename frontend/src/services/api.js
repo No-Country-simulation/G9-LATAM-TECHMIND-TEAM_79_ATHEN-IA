@@ -74,22 +74,56 @@ export function analizarContenido({ titulo, texto, origen, url }) {
 }
 
 // ---------------------------------------------------------------------------
-// Historial
+// Historial / Busqueda Vectorial
 // ---------------------------------------------------------------------------
 
 /**
- * GET /contenidos - historial de analisis, del mas reciente al mas antiguo.
+ * GET /cursos/buscar o /contenidos - realiza búsqueda vectorial si hay término 'buscar',
+ * o trae el historial por defecto si la búsqueda está vacía.
  *
  * @param {{categoria?: string, buscar?: string, limite?: number}} filtros
  * @param {AbortSignal} [signal] Para cancelar busquedas que quedaron obsoletas.
  * @returns {Promise<{total: number, items: object[]}>}
  */
 export function obtenerContenidos(filtros = {}, signal) {
-  // Se omiten los filtros vacios para no ensuciar la query string.
-  const params = Object.fromEntries(
+  const { buscar, limite } = filtros
+
+  // Opción 1: Búsqueda vectorial en ChromaDB cuando el usuario escribe algo
+  if (buscar && buscar.trim() !== '') {
+    const paramsBusqueda = {
+      q: buscar.trim(),
+      ...(limite && { limite }),
+    }
+
+    return peticion(async () => {
+      const response = await api.get('/cursos/buscar', { params: paramsBusqueda, signal })
+      const lista = response.data?.resultados || response.data || []
+
+      const itemsMapeados = Array.isArray(lista)
+        ? lista.map((curso) => ({
+            id: curso?.id || curso?.id_curso || Math.random(),
+            titulo: curso?.titulo || curso?.title || curso?.nombre || 'Sin título',
+            origen: curso?.origen || curso?.plataforma || curso?.provider || 'Curso',
+            categoria: curso?.categoria || curso?.category || 'Otras Áreas',
+            probabilidad: curso?.probabilidad ?? curso?.score ?? curso?.similitud ?? 100,
+            texto: curso?.descripcion || curso?.summary || '',
+          }))
+        : []
+
+      return {
+        data: {
+          total: response.data?.total || itemsMapeados.length,
+          items: itemsMapeados,
+        },
+      }
+    })
+  }
+
+  // Opción 2: Historial estándar cuando la búsqueda está vacía
+  const paramsHistorial = Object.fromEntries(
     Object.entries(filtros).filter(([, valor]) => valor !== '' && valor != null),
   )
-  return peticion(() => api.get('/contenidos', { params, signal }))
+  return peticion(() => api.get('/contenidos', { params: paramsHistorial, signal }))
 }
 
 /** GET /contenidos/{id} - detalle de un analisis. */

@@ -356,3 +356,107 @@ def sembrar_demo(forzar: bool = False) -> int:
 
     logger.info("Historial precargado con %d contenidos de demo.", len(CONTENIDO_DEMO))
     return len(CONTENIDO_DEMO)
+
+import os
+import chromadb
+from chromadb.utils import embedding_functions
+
+# Configuración de ChromaDB
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+VECTOR_DB_DIR = os.path.join(BASE_DIR, "app", "data", "vector_db")
+
+embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
+    model_name="paraphrase-multilingual-MiniLM-L12-v2"
+)
+
+def buscar_cursos_vectorial(query_es: str, limite: int = 10):
+    client = chromadb.PersistentClient(path=VECTOR_DB_DIR)
+    collection = client.get_collection(name="athenex_courses", embedding_function=embedding_fn)
+    
+    results = collection.query(
+        query_texts=[query_es],
+        n_results=limite
+    )
+
+    formatted = []
+    if results and "metadatas" in results and results["metadatas"]:
+        for idx, meta in enumerate(results["metadatas"][0]):
+            formatted.append({
+                "id": results["ids"][0][idx],
+                "titulo": meta.get("title"),
+                "url": meta.get("url"),
+                "sitio": meta.get("site"),
+                "categoria": meta.get("category"),
+                "rating": meta.get("rating")
+            })
+    return formatted
+import os
+import chromadb
+from chromadb.utils import embedding_functions
+
+# Configuración de rutas para ChromaDB
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+VECTOR_DB_DIR = os.path.join(BASE_DIR, "data", "vector_db")
+
+embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
+    model_name="paraphrase-multilingual-MiniLM-L12-v2"
+)
+
+def buscar_cursos_vectorial(query_es: str, limite: int = 10):
+    client = chromadb.PersistentClient(path=VECTOR_DB_DIR)
+    collection = client.get_collection(name="athenex_courses", embedding_function=embedding_fn)
+    
+    results = collection.query(
+        query_texts=[query_es],
+        n_results=limite
+    )
+
+    formatted = []
+    if results and "metadatas" in results and results["metadatas"]:
+        for idx, meta in enumerate(results["metadatas"][0]):
+            formatted.append({
+                "id": results["ids"][0][idx],
+                "titulo": meta.get("title"),
+                "url": meta.get("url"),
+                "sitio": meta.get("site"),
+                "categoria": meta.get("category"),
+                "rating": meta.get("rating")
+            })
+    return formatted
+import os
+import chromadb
+from chromadb.utils import embedding_functions
+
+# Definición de ruta absoluta segura
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+VECTOR_DB_DIR = os.path.join(BASE_DIR, "backend", "app", "data", "vector_db")
+
+embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
+    model_name="paraphrase-multilingual-MiniLM-L12-v2"
+)
+
+def buscar_cursos_vectorial(query_es: str, limite: int = 10):
+    if not os.path.exists(VECTOR_DB_DIR):
+        print(f"❌ Error: La base vectorial no existe en {VECTOR_DB_DIR}")
+        return []
+
+    client = chromadb.PersistentClient(path=VECTOR_DB_DIR)
+    collection = client.get_collection(name="athenex_courses", embedding_function=embedding_fn)
+    
+    results = collection.query(
+        query_texts=[query_es],
+        n_results=limite
+    )
+
+    formatted = []
+    if results and "metadatas" in results and results["metadatas"]:
+        for idx, meta in enumerate(results["metadatas"][0]):
+            formatted.append({
+                "id": str(results["ids"][0][idx]),
+                "titulo": str(meta.get("title", "") if meta.get("title") else "Sin título"),
+                "url": str(meta.get("url", "") if meta.get("url") else ""),
+                "sitio": str(meta.get("site", "") if meta.get("site") else ""),
+                "categoria": str(meta.get("category", "") if meta.get("category") else ""),
+                "rating": str(meta.get("rating", "") if meta.get("rating") else "N/A")
+            })
+    return formatted
