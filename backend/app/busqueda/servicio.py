@@ -146,8 +146,43 @@ class BuscadorCursos:
 
         return relevantes
 
+    def listar(
+        self,
+        categoria: Optional[str] = None,
+        limite: int = 24,
+        desplazamiento: int = 0,
+    ) -> List[dict]:
+        """
+        Navega el catalogo sin consulta semantica.
+
+        Es lo que permite que el Dashboard muestre cursos reales nada mas
+        cargar, en vez de esperar a que el usuario escriba. Los cursos salen en
+        el orden del indice (que es el del dataset), no por relevancia: sin
+        consulta no hay relevancia que ordenar.
+
+        `match_score` viaja como `None`, no como 0.0: son cosas distintas —
+        "no se midio" frente a "se midio y no se parece en nada"—.
+        """
+        crudos = self._almacen.listar(
+            categoria=categoria,
+            limite=max(1, int(limite)),
+            desplazamiento=max(0, int(desplazamiento)),
+        )
+        return [self._formatear(c, None, i) for i, c in enumerate(crudos)]
+
+    def categorias(self) -> List[dict]:
+        """
+        Categorias del catalogo con su conteo, de mayor a menor.
+
+        `[{"nombre": "Cloud Computing y DevOps", "total": 901}, ...]`
+        """
+        return [
+            {"nombre": nombre, "total": total}
+            for nombre, total in self._almacen.categorias().items()
+        ]
+
     @staticmethod
-    def _formatear(candidato: dict, puntaje: float, posicion: int) -> dict:
+    def _formatear(candidato: dict, puntaje: Optional[float], posicion: int) -> dict:
         """
         Arma el contrato que consume el Dashboard.
 
@@ -163,7 +198,14 @@ class BuscadorCursos:
             "category": meta.get("categoria") or "Otras Areas",
             "url": meta.get("url") or "",
             "site": meta.get("sitio") or "Desconocido",
+            # El dataset de 8.710 cursos NO trae ninguna columna de imagen
+            # (se revisaron las 52). El campo existe en el contrato para que el
+            # frontend no tenga que cambiar cuando el ETL la incorpore; hasta
+            # entonces viaja vacio y la tarjeta usa su icono por categoria.
+            "image": meta.get("imagen") or "",
             # Redondeado a 4 decimales: la precision extra de un float64 no
             # aporta nada en la interfaz y ensucia el JSON.
-            "match_score": round(puntaje, 4),
+            # `None` al navegar el catalogo: no hay consulta contra la que
+            # medir afinidad, que no es lo mismo que afinidad cero.
+            "match_score": None if puntaje is None else round(puntaje, 4),
         }

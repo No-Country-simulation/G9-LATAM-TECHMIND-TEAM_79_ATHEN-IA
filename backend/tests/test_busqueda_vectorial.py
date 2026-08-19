@@ -67,6 +67,20 @@ class AlmacenFalso:
         self.consultas.append((texto, limite))
         return self._cursos[:limite]
 
+    def listar(self, categoria=None, limite: int = 24, desplazamiento: int = 0) -> list[dict]:
+        pool = self._cursos
+        if categoria:
+            pool = [c for c in pool if c["metadatos"].get("categoria") == categoria]
+        # Sin consulta no hay distancia que medir.
+        return [{**c, "distancia": None} for c in pool[desplazamiento : desplazamiento + limite]]
+
+    def categorias(self) -> dict:
+        conteo: dict = {}
+        for c in self._cursos:
+            nombre = c["metadatos"].get("categoria") or "Otras Areas"
+            conteo[nombre] = conteo.get(nombre, 0) + 1
+        return dict(sorted(conteo.items(), key=lambda kv: -kv[1]))
+
 
 def curso(id_: str, distancia: float, titulo: str = "Curso", **meta) -> dict:
     """Construye un resultado crudo con la forma que devuelve el almacen."""
@@ -308,7 +322,7 @@ class TestBusquedaDevuelveLosCursosCorrectos:
     def test_el_contrato_trae_todas_las_claves_del_dashboard(self, buscador):
         resultado = buscador.buscar("python")[0]
         assert set(resultado) == {
-            "id", "title", "description", "category", "url", "site", "match_score"
+            "id", "title", "description", "category", "url", "site", "image", "match_score"
         }
 
     def test_tolera_metadatos_incompletos_de_un_indice_antiguo(self):
@@ -377,7 +391,7 @@ class TestRutaBuscarCursos:
 
         primero = cuerpo["resultados"][0]
         assert set(primero) == {
-            "id", "title", "description", "category", "url", "site", "match_score"
+            "id", "title", "description", "category", "url", "site", "image", "match_score"
         }
         assert 0.0 <= primero["match_score"] <= 1.0
 
@@ -727,3 +741,119 @@ class TestDeduplicacion:
         resultado = BuscadorCursos(AlmacenFalso(repetidos)).buscar("docker")[0]
         assert resultado["url"] == "https://mejor.com"
         assert resultado["match_score"] == pytest.approx(0.90)
+
+
+# ===========================================================================
+# 8. Navegacion del catalogo (GET /cursos)
+# ===========================================================================
+
+
+CLAVES_CURSO = {"id", "title", "description", "category", "url", "site", "image", "match_score"}
+
+
+class TestNavegacionDelCatalogo:
+    """
+    El endpoint que faltaba. Sin el, una vista sin consulta caia a
+    `GET /contenidos` —el historial, con 8 registros de demo— y parecia que el
+    catalogo de +8.000 cursos no estuviera conectado al frontend.
+    """
+
+    def test_devuelve_cursos_sin_consulta(self, buscador):
+        items = buscador.listar(limite=3)
+        assert len(items) == 3
+        assert all(set(i) == CLAVES_CURSO for i in items)
+
+    def test_el_puntaje_es_nulo_al_navegar(self, buscador):
+        # `None` significa "no se midio", que no es lo mismo que 0.0
+        # ("se midio y no se parece"). La tarjeta oculta el badge con `None`.
+        assert all(i["match_score"] is None for i in buscador.listar())
+
+    def test_filtra_por_categoria(self):
+        almacen = AlmacenFalso([
+            curso("c1", 0.1, "Kubernetes", categoria="Cloud Computing y DevOps"),
+            curso("c2", 0.2, "Pandas", categoria="Ciencia de Datos y Analitica"),
+        ])
+        items = BuscadorCursos(almacen).listar(categoria="Cloud Computing y DevOps")
+        assert [i["title"] for i in items] == ["Kubernetes"]
+
+    def test_pagina_con_desplazamiento(self, buscador):
+        primera = buscador.listar(limite=2, desplazamiento=0)
+        segunda = buscador.listar(limite=2, desplazamiento=2)
+        assert [i["id"] for i in primera] != [i["id"] for i in segunda]
+
+    def test_un_indice_vacio_devuelve_lista_vacia(self):
+        assert BuscadorCursos(AlmacenFalso([])).listar() == []
+
+    def test_agrega_las_categorias_con_su_conteo(self):
+        almacen = AlmacenFalso([
+            curso("c1", 0.1, "A", categoria="Cloud Computing y DevOps"),
+            curso("c2", 0.2, "B", categoria="Cloud Computing y DevOps"),
+            curso("c3", 0.3, "C", categoria="Ciberseguridad y Redes"),
+        ])
+        assert BuscadorCursos(almacen).categorias() == [
+            {"nombre": "Cloud Computing y DevOps", "total": 2},
+            {"nombre": "Ciberseguridad y Redes", "total": 1},
+        ]
+
+
+class TestRutaCatalogo:
+    def test_get_cursos_responde_200_con_el_contrato(self, cliente_con_catalogo):
+        respuesta = cliente_con_catalogo.get("/cursos", params={"limite": 3})
+        assert respuesta.status_code == 200
+
+        cuerpo = respuesta.json()
+        assert cuerpo["total"] == len(cuerpo["items"]) == 3
+        assert cuerpo["total_indexado"] == 5
+        assert cuerpo["categoria"] is None
+        assert set(cuerpo["items"][0]) == CLAVES_CURSO
+        assert cuerpo["items"][0]["match_score"] is None
+
+    def test_get_cursos_categorias_responde_200(self, cliente_con_catalogo):
+        cuerpo = cliente_con_catalogo.get("/cursos/categorias").json()
+        assert cuerpo["total"] == len(cuerpo["items"]) >= 1
+        assert set(cuerpo["items"][0]) == {"nombre", "total"}
+
+    def test_la_ruta_de_categorias_no_la_captura_una_ruta_con_parametro(self):
+        # `/cursos/categorias` y `/cursos/buscar` deben resolverse como rutas
+        # literales. Starlette resuelve por orden de registro: si algun dia se
+        # anade `/cursos/{curso_id}` antes, capturaria ambas como si fueran ids.
+        rutas = [getattr(r, "path", "") for r in app.routes]
+        for literal in ("/cursos/buscar", "/cursos/categorias"):
+            assert rutas.count(literal) == 1
+            con_parametro = [r for r in rutas if r.startswith("/cursos/{")]
+            if con_parametro:
+                assert rutas.index(literal) < min(rutas.index(p) for p in con_parametro)
+
+    @pytest.mark.parametrize(
+        "params",
+        [{"limite": 0}, {"limite": 101}, {"desplazamiento": -1}],
+        ids=["limite-0", "limite-101", "desplazamiento-negativo"],
+    )
+    def test_rechaza_parametros_invalidos_con_422(self, cliente_con_catalogo, params):
+        assert cliente_con_catalogo.get("/cursos", params=params).status_code == 422
+
+    def test_sin_indice_responde_200_vacio_y_no_500(self, client):
+        app.dependency_overrides[get_buscador_cursos] = lambda: BuscadorCursos(
+            AlmacenFalso([], disponible=False)
+        )
+        try:
+            respuesta = client.get("/cursos")
+            assert respuesta.status_code == 200
+            assert respuesta.json()["items"] == []
+        finally:
+            app.dependency_overrides.pop(get_buscador_cursos, None)
+
+
+class TestCampoImagen:
+    """
+    `image` forma parte del contrato aunque el dataset entregado por Data no
+    traiga ninguna columna de imagen (se revisaron las 52). Viaja vacio para
+    que el frontend no tenga que cambiar cuando el ETL la incorpore.
+    """
+
+    def test_viaja_vacio_cuando_el_dataset_no_la_trae(self, buscador):
+        assert all(i["image"] == "" for i in buscador.buscar("python"))
+
+    def test_se_propaga_si_el_indice_la_tiene(self):
+        almacen = AlmacenFalso([curso("c1", 0.1, "Go", imagen="https://cdn.com/go.png")])
+        assert BuscadorCursos(almacen).buscar("go")[0]["image"] == "https://cdn.com/go.png"

@@ -518,13 +518,24 @@ class CursoEncontrado(BaseModel):
     )
     url: str = Field(default="", description="Enlace al curso. Vacio si el dataset no lo trae.")
     site: str = Field(default="Desconocido", description="Plataforma que lo publica.")
-    match_score: float = Field(
-        ...,
+    image: str = Field(
+        default="",
+        description=(
+            "Portada del curso. Hoy siempre vacia: el dataset entregado por Data no "
+            "trae ninguna columna de imagen (se revisaron las 52). El campo forma "
+            "parte del contrato para que el frontend no cambie cuando el ETL la "
+            "incorpore; mientras tanto la tarjeta usa su icono por categoria."
+        ),
+    )
+    match_score: Optional[float] = Field(
+        default=None,
         ge=0.0,
         le=1.0,
         description=(
             "Afinidad semantica con la consulta (similitud coseno). "
-            "1.0 = identico, 0.0 = sin relacion."
+            "1.0 = identico, 0.0 = sin relacion. "
+            "`null` al navegar el catalogo con `GET /cursos`: no hay consulta "
+            "contra la que medir afinidad, que no es lo mismo que afinidad cero."
         ),
         examples=[0.78],
     )
@@ -567,12 +578,51 @@ class RespuestaBusquedaCursos(BaseModel):
                             "category": "Ciencia de Datos y Analitica",
                             "url": "https://www.coursera.org/learn/python-data",
                             "site": "Coursera",
+                            "image": "",
                             "match_score": 0.78,
                         }
                     ],
                 }
             ]
         }
+    )
+
+
+class CategoriaCatalogo(BaseModel):
+    """Una categoria del catalogo de cursos, con cuantos cursos contiene."""
+
+    nombre: str = Field(..., description="Nombre de la categoria.")
+    total: int = Field(..., ge=0, description="Cursos indexados en esta categoria.")
+
+
+class RespuestaCatalogoCursos(BaseModel):
+    """
+    Respuesta de `GET /cursos` — navegacion del catalogo sin consulta.
+
+    Distinta de `RespuestaBusquedaCursos` a proposito: aqui no hay consulta ni
+    umbral, y `match_score` viaja como `null` en cada curso.
+    """
+
+    total: int = Field(..., ge=0, description="Cursos devueltos en esta pagina.")
+    total_indexado: int = Field(..., ge=0, description="Cursos en todo el indice.")
+    categoria: Optional[str] = Field(
+        default=None,
+        description="Categoria por la que se filtro, o `null` si no se filtro.",
+    )
+    desplazamiento: int = Field(..., ge=0, description="Cursos omitidos (paginacion).")
+    items: List[CursoEncontrado] = Field(
+        default_factory=list,
+        description="Cursos del catalogo, en el orden del indice.",
+    )
+
+
+class RespuestaCategoriasCatalogo(BaseModel):
+    """Respuesta de `GET /cursos/categorias`."""
+
+    total: int = Field(..., ge=0, description="Cantidad de categorias distintas.")
+    items: List[CategoriaCatalogo] = Field(
+        default_factory=list,
+        description="Categorias del catalogo, de mas a menos cursos.",
     )
 
 

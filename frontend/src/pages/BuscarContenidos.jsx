@@ -1,15 +1,32 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Search, X, SearchX, AlertCircle } from 'lucide-react'
+import { Search, X, SearchX, AlertCircle, Library, Globe } from 'lucide-react'
 import CourseCard from '../components/CourseCard'
 import CategoryBadge from '../components/CategoryBadge'
 import ContentDetail from '../components/ContentDetail'
 import SearchHistory from '../components/SearchHistory'
 import { SkeletonGrid, Spinner, Skeleton } from '../components/Loaders'
-import { useCategorias, useContenidos } from '../hooks/useContenidos'
+import {
+  useCategorias,
+  useCategoriasCursos,
+  useContenidos,
+  useCursos,
+} from '../hooks/useContenidos'
 import { useHistorialBusquedas } from '../hooks/useHistorialBusquedas'
 
 const FILTRO_TODOS = 'Todos'
+
+// Las dos fuentes que puede consultar esta vista.
+//
+//   catalogo   +8.000 cursos indexados en ChromaDB (GET /cursos[/buscar])
+//   biblioteca el historial de contenidos analizados (GET /contenidos)
+//
+// El catalogo es el valor por defecto: es lo que el usuario espera encontrar
+// al entrar a "Buscar". Antes esta vista solo consultaba el historial, que en
+// una instalacion nueva son 8 registros de demo — de ahi la impresion de que
+// el frontend mostraba datos estaticos.
+const FUENTE_CATALOGO = 'catalogo'
+const FUENTE_BIBLIOTECA = 'biblioteca'
 
 // Un término se registra en el historial solo tras esta pausa sin escribir.
 // Sin ella, teclear "docker" guardaría "d", "do", "doc"... como 6 búsquedas.
@@ -30,9 +47,28 @@ export default function BuscarContenidos() {
 
   const [consulta, setConsulta] = useState(consultaUrl)
   const [categoriaActiva, setCategoriaActiva] = useState(FILTRO_TODOS)
+  const [fuente, setFuente] = useState(FUENTE_CATALOGO)
 
-  // Las categorias vienen del motor activo, no cableadas en el frontend.
-  const { categorias, cargando: cargandoCategorias } = useCategorias()
+  const esCatalogo = fuente === FUENTE_CATALOGO
+
+  // Cada fuente tiene su propio catalogo de categorias y NO son intercambiables:
+  // las del clasificador son las clases de `clasificador_cursos.pkl`; las del
+  // indice son las que realmente etiquetan a los +8.000 cursos. Filtrar una
+  // fuente con las categorias de la otra daria siempre cero resultados.
+  const { categorias: categoriasHistorial, cargando: cargandoCatHistorial } = useCategorias()
+  const { categorias: categoriasCatalogo, cargando: cargandoCatCatalogo } = useCategoriasCursos()
+
+  const categorias = esCatalogo
+    ? categoriasCatalogo.map((c) => c.nombre)
+    : categoriasHistorial
+  const cargandoCategorias = esCatalogo ? cargandoCatCatalogo : cargandoCatHistorial
+
+  // Al cambiar de fuente se limpia el filtro: la categoria activa pertenece al
+  // catalogo anterior y no tiene por que existir en el nuevo.
+  const cambiarFuente = useCallback((nueva) => {
+    setFuente(nueva)
+    setCategoriaActiva(FILTRO_TODOS)
+  }, [])
 
   // Mantiene el input sincronizado cuando la URL cambia desde el Header.
   useEffect(() => setConsulta(consultaUrl), [consultaUrl])
@@ -57,7 +93,12 @@ export default function BuscarContenidos() {
     [consulta, categoriaActiva],
   )
 
-  const { items, total, cargando, error } = useContenidos(filtros)
+  // Ambos hooks se montan siempre (las reglas de hooks prohiben llamarlos
+  // dentro de un `if`); el que no esta en uso queda inerte via `activo`.
+  const historialApi = useContenidos(esCatalogo ? {} : filtros)
+  const catalogoApi = useCursos({ ...filtros, activo: esCatalogo })
+
+  const { items, total, cargando, error } = esCatalogo ? catalogoApi : historialApi
 
   // --- Historial de búsquedas (persistido en localStorage) ------------------
   const historial = useHistorialBusquedas()
@@ -98,8 +139,38 @@ export default function BuscarContenidos() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-tinta-900">Buscar Contenidos</h1>
         <p className="mt-1 text-sm text-tinta-500">
-          Encuentra cursos, temas y tecnologias en tu biblioteca analizada.
+          {esCatalogo
+            ? 'Busqueda semantica sobre el catalogo completo de cursos. Describe lo que quieres aprender, no hace falta acertar con las palabras exactas.'
+            : 'Encuentra cursos, temas y tecnologias en tu biblioteca analizada.'}
         </p>
+      </div>
+
+      {/* --- Fuente de datos --- */}
+      <div
+        role="tablist"
+        aria-label="Fuente de los resultados"
+        className="inline-flex rounded-xl border border-linea bg-panel p-1"
+      >
+        {[
+          { id: FUENTE_CATALOGO, etiqueta: 'Catalogo de cursos', Icono: Globe },
+          { id: FUENTE_BIBLIOTECA, etiqueta: 'Mi biblioteca', Icono: Library },
+        ].map(({ id, etiqueta, Icono }) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={fuente === id}
+            onClick={() => cambiarFuente(id)}
+            className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+              fuente === id
+                ? 'bg-brand-600 text-white'
+                : 'text-tinta-700 hover:text-tinta-900'
+            }`}
+          >
+            <Icono size={14} aria-hidden="true" />
+            {etiqueta}
+          </button>
+        ))}
       </div>
 
       {/* --- Buscador en tiempo real --- */}
@@ -112,7 +183,11 @@ export default function BuscarContenidos() {
           type="text"
           value={consulta}
           onChange={(e) => setConsulta(e.target.value)}
-          placeholder="Ej: docker, spring boot, python..."
+          placeholder={
+            esCatalogo
+              ? "Ej: quiero aprender machine learning con python"
+              : "Ej: docker, spring boot, python..."
+          }
           aria-label="Buscar contenidos"
           className="input-base px-11"
         />
@@ -184,7 +259,7 @@ export default function BuscarContenidos() {
           'Buscando...'
         ) : (
           <>
-            {total} resultado{total === 1 ? '' : 's'}
+            {total} {esCatalogo && !filtros.buscar ? 'cursos en el catalogo' : `resultado${total === 1 ? '' : 's'}`}
             {hayFiltros && (
               <>
                 {filtros.buscar && (
@@ -226,7 +301,11 @@ export default function BuscarContenidos() {
           }`}
         >
           {items.map((contenido) => (
-            <CourseCard key={contenido.id} contenido={contenido} onVer={setSeleccionado} />
+            <CourseCard
+              key={contenido.id}
+              contenido={contenido}
+              onVer={esCatalogo ? undefined : setSeleccionado}
+            />
           ))}
         </div>
       ) : (
@@ -237,9 +316,11 @@ export default function BuscarContenidos() {
             </span>
             <p className="mt-4 text-sm font-medium text-tinta-700">Sin resultados</p>
             <p className="mt-1 max-w-sm text-sm text-tinta-500">
-              {hayFiltros
-                ? 'No encontramos contenido que coincida. Prueba con otro termino o quita el filtro de categoria.'
-                : 'Aun no has analizado contenido. Ve a "Agregar Curso" para empezar.'}
+              {esCatalogo
+                ? 'Ningun curso del catalogo supera el umbral de afinidad para esa consulta. Prueba a describirlo con otras palabras.'
+                : hayFiltros
+                  ? 'No encontramos contenido que coincida. Prueba con otro termino o quita el filtro de categoria.'
+                  : 'Aun no has analizado contenido. Ve a "Agregar Curso" para empezar.'}
             </p>
           </div>
         )

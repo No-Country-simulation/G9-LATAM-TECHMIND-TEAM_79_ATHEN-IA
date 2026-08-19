@@ -101,6 +101,9 @@ class AlmacenChroma:
         self._coleccion = None
         self._intentado = False
         self._lock = threading.Lock()
+        # Conteo por categoria, memorizado en la primera llamada: solo cambia
+        # al reconstruir el indice.
+        self._categorias: Optional[dict] = None
 
     # -- apertura perezosa ---------------------------------------------------
 
@@ -211,6 +214,70 @@ class AlmacenChroma:
             return []
 
         return self._normalizar(crudo)
+
+    def listar(
+        self,
+        categoria: Optional[str] = None,
+        limite: int = 24,
+        desplazamiento: int = 0,
+    ) -> List[dict]:
+        """
+        Navega el catalogo sin consulta. Ver `AlmacenVectorial.listar`.
+
+        Usa `collection.get()`, que filtra por metadatos sin calcular ninguna
+        distancia: no carga el modelo de embeddings ni recorre el grafo HNSW.
+        """
+        coleccion = self._abrir()
+        if coleccion is None or limite <= 0:
+            return []
+
+        try:
+            crudo = coleccion.get(
+                where={"categoria": categoria} if categoria else None,
+                limit=limite,
+                offset=max(0, desplazamiento),
+                include=["metadatas"],
+            )
+        except Exception as exc:
+            logger.warning("Fallo al listar el catalogo: %s", exc)
+            return []
+
+        # `get()` devuelve listas planas, no anidadas por consulta como `query()`.
+        ids = crudo.get("ids") or []
+        metadatos = crudo.get("metadatas") or []
+        return [
+            {"id": str(id_), "distancia": None, "metadatos": dict(meta or {}), "documento": ""}
+            for id_, meta in zip(ids, metadatos)
+        ]
+
+    def categorias(self) -> dict:
+        """
+        Conteo de cursos por categoria. Ver `AlmacenVectorial.categorias`.
+
+        El resultado se memoriza: recorrer los metadatos de +5.000 cursos en
+        cada peticion seria absurdo para un dato que solo cambia al reconstruir
+        el indice.
+        """
+        if self._categorias is not None:
+            return self._categorias
+
+        coleccion = self._abrir()
+        if coleccion is None:
+            return {}
+
+        try:
+            crudo = coleccion.get(include=["metadatas"])
+        except Exception as exc:
+            logger.warning("Fallo al agregar categorias: %s", exc)
+            return {}
+
+        conteo: dict = {}
+        for meta in crudo.get("metadatas") or []:
+            nombre = (meta or {}).get("categoria") or "Otras Areas"
+            conteo[nombre] = conteo.get(nombre, 0) + 1
+
+        self._categorias = dict(sorted(conteo.items(), key=lambda kv: -kv[1]))
+        return self._categorias
 
     @staticmethod
     def _normalizar(crudo: dict) -> List[dict]:

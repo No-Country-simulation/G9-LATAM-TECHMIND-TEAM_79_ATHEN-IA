@@ -20,11 +20,90 @@ from fastapi import APIRouter, Depends, Query, status
 
 from ..busqueda.servicio import UMBRAL_RELEVANCIA, BuscadorCursos
 from ..dependencies import get_buscador_cursos
-from ..schemas import CursoEncontrado, ErrorResponse, RespuestaBusquedaCursos
+from ..schemas import (
+    CategoriaCatalogo,
+    CursoEncontrado,
+    ErrorResponse,
+    RespuestaBusquedaCursos,
+    RespuestaCatalogoCursos,
+    RespuestaCategoriasCatalogo,
+)
 
 logger = logging.getLogger("athenia.routers.cursos")
 
 router = APIRouter(tags=["Cursos"])
+
+
+# NOTA DE ORDEN: `/cursos/buscar` y `/cursos/categorias` se declaran ANTES que
+# cualquier `/cursos/{algo}`. Starlette resuelve por orden de registro, asi que
+# una ruta con parametro declarada antes capturaria "buscar" como si fuera un id.
+
+
+@router.get(
+    "/cursos",
+    summary="Navegar el catalogo de cursos",
+    response_model=RespuestaCatalogoCursos,
+    status_code=status.HTTP_200_OK,
+)
+def listar_cursos(
+    categoria: str | None = Query(
+        default=None,
+        description="Filtra por categoria exacta. Usa `GET /cursos/categorias` para el catalogo.",
+        examples=["Ciencia de Datos y Analitica"],
+    ),
+    limite: int = Query(default=24, ge=1, le=100, description="Cursos por pagina."),
+    desplazamiento: int = Query(default=0, ge=0, description="Cursos a omitir (paginacion)."),
+    buscador: BuscadorCursos = Depends(get_buscador_cursos),
+) -> RespuestaCatalogoCursos:
+    """
+    Devuelve cursos del catalogo **sin** consulta semantica.
+
+    Existe porque el Dashboard necesita mostrar cursos reales nada mas cargar,
+    antes de que el usuario escriba nada. Hasta ahora la unica via al catalogo
+    era `/cursos/buscar`, que exige un texto; sin el, la interfaz caia a
+    `GET /contenidos` —el historial de analisis, con 8 registros de demo— y
+    parecia que el catalogo de +8.000 cursos no estuviera conectado.
+
+    No calcula distancias ni carga el modelo de embeddings: filtra por
+    metadatos, asi que responde en milisegundos. Cada curso trae
+    `match_score: null`, porque sin consulta no hay afinidad que medir.
+    """
+    items = buscador.listar(
+        categoria=categoria,
+        limite=limite,
+        desplazamiento=desplazamiento,
+    )
+    return RespuestaCatalogoCursos(
+        total=len(items),
+        total_indexado=buscador.total_indexado,
+        categoria=categoria,
+        desplazamiento=desplazamiento,
+        items=[CursoEncontrado(**curso) for curso in items],
+    )
+
+
+@router.get(
+    "/cursos/categorias",
+    summary="Categorias del catalogo con su conteo",
+    response_model=RespuestaCategoriasCatalogo,
+    status_code=status.HTTP_200_OK,
+)
+def categorias_del_catalogo(
+    buscador: BuscadorCursos = Depends(get_buscador_cursos),
+) -> RespuestaCategoriasCatalogo:
+    """
+    Categorias reales del catalogo, con cuantos cursos tiene cada una.
+
+    Distinto de `GET /categorias`, que devuelve las clases del **clasificador**
+    (`clasificador_cursos.pkl`). Son dos catalogos distintos: filtrar el
+    catalogo por una categoria que solo existe en el clasificador devolveria
+    siempre cero resultados.
+    """
+    items = buscador.categorias()
+    return RespuestaCategoriasCatalogo(
+        total=len(items),
+        items=[CategoriaCatalogo(**c) for c in items],
+    )
 
 
 @router.get(

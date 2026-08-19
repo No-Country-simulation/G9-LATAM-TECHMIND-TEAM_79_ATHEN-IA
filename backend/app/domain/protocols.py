@@ -196,6 +196,34 @@ class AlmacenVectorial(Protocol):
         """
         ...
 
+    def listar(
+        self,
+        categoria: Optional[str] = None,
+        limite: int = 24,
+        desplazamiento: int = 0,
+    ) -> List[dict]:
+        """
+        Navega el catalogo SIN consulta semantica.
+
+        Necesario porque el Dashboard tiene que poder mostrar cursos antes de
+        que el usuario escriba nada. `consultar()` no sirve para eso: exige un
+        texto, y vectorizar una cadena vacia devuelve cursos al azar.
+
+        Devuelve la misma forma que `consultar()` pero con `distancia: None`
+        —no hay consulta contra la que medir afinidad—.
+        """
+        ...
+
+    def categorias(self) -> dict:
+        """
+        Cuantos cursos hay por categoria: `{"Cloud Computing y DevOps": 901}`.
+
+        Alimenta los filtros del catalogo. Se lee del indice y no de la
+        taxonomia del clasificador, porque son catalogos distintos: filtrar por
+        una categoria que el indice no contiene daria siempre cero.
+        """
+        ...
+
 
 # ---------------------------------------------------------------------------
 # Persistencia
