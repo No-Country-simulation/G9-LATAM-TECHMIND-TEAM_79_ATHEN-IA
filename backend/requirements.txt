@@ -29,6 +29,19 @@ numpy>=2.0.0
 # el `pip install` del CI. El notebook de Data Science tiene su propio entorno
 # y si lo necesita, pero eso no obliga al runtime de la API.
 
+# --- Busqueda vectorial de cursos --------------------------------------------
+# Indice semantico sobre el catalogo de +8.000 cursos (GET /cursos/buscar).
+#
+# Ambas faltaban en este archivo aunque el codigo ya las importaba: la funcion
+# de busqueda solo corria en la maquina donde se genero el indice, y en una
+# instalacion limpia (CI, Docker, OCI) el import fallaba.
+#
+# `sentence-transformers` arrastra PyTorch (~2 GB). Por eso `busqueda/almacen.py`
+# lo importa de forma diferida: si la dependencia o el indice no estan, la API
+# arranca igual y `/cursos/buscar` responde con lista vacia en vez de un 500.
+chromadb==1.5.9
+sentence-transformers==3.3.1
+
 # --- Pruebas / QA ------------------------------------------------------------
 pytest==8.3.4
 httpx==0.28.1

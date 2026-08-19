@@ -485,6 +485,97 @@ class ErrorResponse(BaseModel):
     )
 
 
+# ===========================================================================
+# Busqueda vectorial de cursos
+# ===========================================================================
+
+
+class CursoEncontrado(BaseModel):
+    """
+    Una coincidencia de `GET /cursos/buscar`.
+
+    Es el contrato que consumen las tarjetas del Dashboard. La version
+    original devolvia un `dict` suelto, sin `response_model`, con claves en
+    espanol y **sin puntaje**: el frontend no podia ordenar ni mostrar la
+    afinidad, y cualquier cambio en el backend pasaba desapercibido porque no
+    habia esquema que validara la salida.
+    """
+
+    id: str = Field(
+        ...,
+        description="Identificador estable del curso dentro del indice.",
+        examples=["curso_1423"],
+    )
+    title: str = Field(..., description="Titulo del curso.")
+    description: str = Field(
+        default="",
+        description="Resumen corto del curso (hasta 500 caracteres).",
+    )
+    category: str = Field(
+        ...,
+        description="Area tematica del curso.",
+        examples=["Ciencia de Datos y Analitica"],
+    )
+    url: str = Field(default="", description="Enlace al curso. Vacio si el dataset no lo trae.")
+    site: str = Field(default="Desconocido", description="Plataforma que lo publica.")
+    match_score: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "Afinidad semantica con la consulta (similitud coseno). "
+            "1.0 = identico, 0.0 = sin relacion."
+        ),
+        examples=[0.78],
+    )
+
+
+class RespuestaBusquedaCursos(BaseModel):
+    """Respuesta completa de `GET /cursos/buscar`."""
+
+    busqueda: str = Field(..., description="Consulta tal como se recibio.")
+    total: int = Field(..., ge=0, description="Cantidad de cursos devueltos.")
+    min_score: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Umbral de relevancia aplicado. Los cursos por debajo se descartaron.",
+    )
+    total_indexado: int = Field(
+        ...,
+        ge=0,
+        description="Cursos disponibles en el indice vectorial.",
+    )
+    resultados: List[CursoEncontrado] = Field(
+        default_factory=list,
+        description="Coincidencias ordenadas de mayor a menor afinidad.",
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "busqueda": "aprender python para analisis de datos",
+                    "total": 2,
+                    "min_score": 0.35,
+                    "total_indexado": 8109,
+                    "resultados": [
+                        {
+                            "id": "curso_1423",
+                            "title": "Python for Data Science",
+                            "description": "Aprende pandas, numpy y visualizacion.",
+                            "category": "Ciencia de Datos y Analitica",
+                            "url": "https://www.coursera.org/learn/python-data",
+                            "site": "Coursera",
+                            "match_score": 0.78,
+                        }
+                    ],
+                }
+            ]
+        }
+    )
+
+
 # Resuelve las referencias adelantadas usadas en `MetricasOutput` y
 # `AnaliticasOutput` (ambos citan `ConteoPalabraClave` antes de su definicion).
 MetricasOutput.model_rebuild()

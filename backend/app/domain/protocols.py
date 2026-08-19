@@ -142,6 +142,62 @@ class MotorRecomendaciones(Protocol):
 
 
 # ---------------------------------------------------------------------------
+# Busqueda vectorial
+# ---------------------------------------------------------------------------
+
+
+@runtime_checkable
+class AlmacenVectorial(Protocol):
+    """
+    Contrato del indice vectorial del catalogo de cursos.
+
+    Implementacion actual: `busqueda.almacen.AlmacenChroma` (ChromaDB con
+    `paraphrase-multilingual-MiniLM-L12-v2`, 384 dimensiones).
+
+    Existe para que la ruta `/cursos/buscar` y `busqueda.servicio` dependan de
+    esta forma y no de ChromaDB. Dos consecuencias practicas:
+
+      - Migrar a FAISS, pgvector u Oracle AI Vector Search no toca ni el
+        servicio ni la ruta.
+      - Las pruebas inyectan un doble en memoria y se ejecutan **sin** la base
+        vectorial de 26 MB y **sin** descargar el modelo de embeddings.
+    """
+
+    #: Identificador del backend, expuesto para trazabilidad. Ej: "chromadb".
+    nombre: str
+
+    def esta_disponible(self) -> bool:
+        """
+        True si el indice se puede consultar ahora mismo.
+
+        False cuando falta la dependencia, no existe el directorio o la
+        coleccion esta vacia. Nunca lanza: permite que la ruta responda un
+        503 explicativo en lugar de un 500.
+        """
+        ...
+
+    def total(self) -> int:
+        """Cantidad de cursos indexados. 0 si el indice no esta disponible."""
+        ...
+
+    def consultar(self, texto: str, limite: int) -> List[dict]:
+        """
+        Devuelve los `limite` cursos mas cercanos a `texto`.
+
+        Cada elemento trae las claves:
+
+          - `id`         identificador estable del curso (ej. "curso_57")
+          - `distancia`  distancia **coseno** en [0, 2]; 0 = identico
+          - `metadatos`  dict con titulo, descripcion, categoria, url, sitio...
+
+        La conversion de distancia a puntaje y el filtrado por umbral NO se
+        hacen aqui: son responsabilidad de `busqueda.servicio`, para que
+        cambiar de motor no cambie las reglas de negocio.
+        """
+        ...
+
+
+# ---------------------------------------------------------------------------
 # Persistencia
 # ---------------------------------------------------------------------------
 

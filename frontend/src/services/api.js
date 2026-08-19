@@ -78,6 +78,34 @@ export function analizarContenido({ titulo, texto, origen, url }) {
 // ---------------------------------------------------------------------------
 
 /**
+ * Traduce un curso de `GET /cursos/buscar` a la forma que rendrean las
+ * tarjetas del historial, para que ambas fuentes compartan componente.
+ *
+ * `match_score` llega en 0..1 (similitud coseno) y se mapea a `probabilidad`,
+ * que es la escala 0..1 que ya usa `aPorcentaje()` en el resto de la app.
+ *
+ * @param {{id:string, title:string, description:string, category:string,
+ *          url:string, site:string, match_score:number}} curso
+ */
+function mapearCurso(curso, indice) {
+  return {
+    // El id del indice es estable ("curso_1423"). Antes se caia a
+    // `Math.random()`, que genera una key distinta en CADA render y obliga a
+    // React a desmontar y remontar toda la lista.
+    id: curso?.id ?? `curso_${indice}`,
+    titulo: curso?.title || 'Sin título',
+    origen: curso?.site || 'Curso',
+    categoria: curso?.category || 'Otras Áreas',
+    // OJO con el rango: `aPorcentaje()` multiplica por 100. El respaldo
+    // anterior era `?? 100`, asi que sin puntaje del backend las tarjetas
+    // mostraban "10000%".
+    probabilidad: typeof curso?.match_score === 'number' ? curso.match_score : 0,
+    texto: curso?.description || '',
+    url: curso?.url || '',
+  }
+}
+
+/**
  * GET /cursos/buscar o /contenidos - realiza búsqueda vectorial si hay término 'buscar',
  * o trae el historial por defecto si la búsqueda está vacía.
  *
@@ -97,23 +125,12 @@ export function obtenerContenidos(filtros = {}, signal) {
 
     return peticion(async () => {
       const response = await api.get('/cursos/buscar', { params: paramsBusqueda, signal })
-      const lista = response.data?.resultados || response.data || []
-
-      const itemsMapeados = Array.isArray(lista)
-        ? lista.map((curso) => ({
-            id: curso?.id || curso?.id_curso || Math.random(),
-            titulo: curso?.titulo || curso?.title || curso?.nombre || 'Sin título',
-            origen: curso?.origen || curso?.plataforma || curso?.provider || 'Curso',
-            categoria: curso?.categoria || curso?.category || 'Otras Áreas',
-            probabilidad: curso?.probabilidad ?? curso?.score ?? curso?.similitud ?? 100,
-            texto: curso?.descripcion || curso?.summary || '',
-          }))
-        : []
+      const lista = Array.isArray(response.data?.resultados) ? response.data.resultados : []
 
       return {
         data: {
-          total: response.data?.total || itemsMapeados.length,
-          items: itemsMapeados,
+          total: response.data?.total ?? lista.length,
+          items: lista.map(mapearCurso),
         },
       }
     })

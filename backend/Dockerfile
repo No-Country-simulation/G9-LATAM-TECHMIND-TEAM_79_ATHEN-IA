@@ -33,7 +33,24 @@ COPY requirements.txt .
 
 RUN python -m venv /opt/venv \
  && /opt/venv/bin/pip install --upgrade pip \
+ # torch se instala primero desde el indice CPU-only. `sentence-transformers`
+ # lo arrastra por defecto en su variante CUDA (~2,5 GB de binarios de GPU),
+ # inutil en una VM de OCI sin GPU. Esto deja la imagen ~2 GB mas ligera.
+ && /opt/venv/bin/pip install torch --index-url https://download.pytorch.org/whl/cpu \
  && /opt/venv/bin/pip install -r requirements.txt
+
+# Modelo de embeddings horneado en la imagen.
+# ------------------------------------------
+# `sentence-transformers` descarga el modelo de HuggingFace la PRIMERA vez que
+# se usa. Sin este paso, en produccion pasa una de dos:
+#   - la primera busqueda tarda ~30 s mientras baja ~470 MB, o
+#   - si la VM de OCI no tiene salida a internet, el modelo nunca carga y
+#     `/cursos/buscar` responde 200 con lista vacia para siempre.
+# Descargarlo en build lo convierte en una capa cacheada e inmutable.
+ENV SENTENCE_TRANSFORMERS_HOME=/opt/modelos
+RUN /opt/venv/bin/python -c "\
+from sentence_transformers import SentenceTransformer; \
+SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')"
 
 # -----------------------------------------------------------------------------
 # Etapa 2 — runtime: solo el venv y el codigo de la aplicacion.
@@ -47,6 +64,7 @@ LABEL org.opencontainers.image.title="AthenIA API" \
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:$PATH" \
+    SENTENCE_TRANSFORMERS_HOME=/opt/modelos \
     ATHENIA_ENV=production \
     ATHENIA_HOST=0.0.0.0 \
     ATHENIA_PORT=8000
@@ -54,8 +72,14 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 
 COPY --from=builder /opt/venv /opt/venv
+# Modelo de embeddings pre-descargado en la etapa builder (ver arriba).
+COPY --from=builder /opt/modelos /opt/modelos
 
 # Se copia solo lo que la API necesita en runtime (ver .dockerignore).
+# Incluye `app/data/vector_db/` — el indice vectorial de cursos viaja horneado,
+# igual que el .pkl del clasificador. Si algun dia se excluye en el
+# .dockerignore, `/cursos/buscar` respondera 200 con lista vacia sin error
+# visible: el mismo modo de fallo silencioso que ya documenta models/.
 COPY app ./app
 COPY models ./models
 

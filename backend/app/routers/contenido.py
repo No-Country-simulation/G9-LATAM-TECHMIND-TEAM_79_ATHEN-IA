@@ -27,7 +27,6 @@ from ..schemas import (
     MetricasOutput,
     RecomendacionItem,
 )
-from ..services import buscar_cursos_vectorial
 logger = logging.getLogger("athenia.routers.contenido")
 
 router = APIRouter(tags=["Contenido"])
@@ -209,24 +208,3 @@ def metricas(
     """Agregados que alimentan las tarjetas y el grafico del Dashboard."""
     return MetricasOutput(**services.calcular_metricas(repositorio.listar()))
 
-@router.get("/cursos/buscar")
-def buscar_cursos(q: str = Query(..., description="Consulta semántica en español o inglés"), limite: int = 10):
-    resultados = buscar_cursos_vectorial(query_es=q, limite=limite)
-    return {
-        "busqueda": q,
-        "total": len(resultados),
-        "resultados": resultados
-    }
-
-
-@router.get("/cursos/buscar", summary="Búsqueda vectorial de cursos")
-def buscar_cursos(q: str, limite: int = 10):
-    """
-    Realiza una búsqueda semántica en la base vectorial de cursos.
-    """
-    resultados = buscar_cursos_vectorial(query_es=q, limite=limite)
-    return {
-        "busqueda": q,
-        "total": len(resultados),
-        "resultados": resultados
-    }
