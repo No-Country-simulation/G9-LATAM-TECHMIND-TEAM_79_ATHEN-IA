@@ -119,3 +119,14 @@ if __name__ == "__main__":  # pragma: no cover
         port=settings.PORT,
         reload=not settings.es_produccion,
     )
+# --- RUTA DIRECTA DE RECOMENDACIONES (.PKL) ---
+@app.get("/recomendaciones-matriz/{curso_id}", tags=["Recomendaciones Matriz"])
+def obtener_recomendaciones_matriz(curso_id: int, limite: int = 4):
+    """
+    Devuelve recomendaciones usando la matriz de similitud de NumPy (.pkl).
+    """
+    from app.ml.matrix_recommender import MatrixRecommender
+
+    recomendador = MatrixRecommender()
+    resultados = recomendador.recomendar(curso_idx=curso_id, top_n=limite)
+    return {"recomendaciones": resultados}

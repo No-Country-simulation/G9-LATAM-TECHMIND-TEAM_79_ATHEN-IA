@@ -176,3 +176,28 @@ def buscar_cursos(
         total_indexado=buscador.total_indexado,
         resultados=[CursoEncontrado(**curso) for curso in encontrados],
     )
+# --- Recomendación por Matriz de Similitud (.pkl) ---
+
+@router.get(
+    "/cursos/{curso_id}/relacionados-matriz",
+    summary="Cursos recomendados usando la matriz relacional (.pkl)",
+    status_code=status.HTTP_200_OK,
+)
+def obtener_cursos_relacionados_matriz(
+    curso_id: int, 
+    limite: int = Query(default=4, ge=1, le=20, description="Cantidad de recomendaciones a devolver.")
+):
+    """
+    Devuelve los cursos mas similares a partir de la matriz de similitud de NumPy (.pkl).
+    Sustituye la recomendacion fija por un match_score dinamico real.
+    """
+    # Importación dentro de la función para evitar la dependencia circular
+    from app.ml.matrix_recommender import MatrixRecommender
+    
+    recomendador = MatrixRecommender()
+    resultados = recomendador.recomendar(curso_idx=curso_id, top_n=limite)
+    
+    if not resultados:
+        return {"recomendaciones": []}
+        
+    return {"recomendaciones": resultados}
