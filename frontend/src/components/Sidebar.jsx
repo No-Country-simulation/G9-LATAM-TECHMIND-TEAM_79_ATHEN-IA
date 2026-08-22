@@ -93,7 +93,7 @@ export default function Sidebar({ abierto = false, onCerrar = () => {} }) {
         {/* --- Marca --- */}
         <div className="mb-8 flex items-center justify-between px-1.5 pt-1.5">
           <div className="flex items-center gap-2.5">
-            <Logo className="h-9 w-9 text-brand-400" />
+            <Logo className="h-9 w-9" />
             <div className="leading-tight">
               {/* Color explicito: sin el hereda del <body>, que en el tema
                   claro es texto oscuro y aqui quedaria invisible. */}

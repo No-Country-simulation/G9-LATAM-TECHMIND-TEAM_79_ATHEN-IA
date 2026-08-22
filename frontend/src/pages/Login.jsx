@@ -35,7 +35,7 @@ export default function Login() {
     <div className="flex min-h-screen">
       {/* --- Panel de marca (oscuro) --- */}
       <aside className="relative hidden w-1/2 flex-col items-center justify-center bg-ink-900 p-12 text-center lg:flex">
-        <Logo className="h-24 w-24 text-brand-400" />
+        <Logo className="h-24 w-24" />
 
         <h1 className="mt-6 text-4xl font-bold tracking-tight text-mist-100">
           Athen<span className="text-brand-400">IA</span>
@@ -60,7 +60,7 @@ export default function Login() {
         <div className="w-full max-w-sm">
           {/* Marca compacta, solo en movil donde el panel lateral se oculta. */}
           <div className="mb-8 flex items-center justify-center gap-2.5 lg:hidden">
-            <Logo className="h-10 w-10 text-brand-600" />
+            <Logo className="h-10 w-10" />
             <span className="text-2xl font-bold tracking-tight text-tinta-900">
               Athen<span className="text-brand-600">IA</span>
             </span>
