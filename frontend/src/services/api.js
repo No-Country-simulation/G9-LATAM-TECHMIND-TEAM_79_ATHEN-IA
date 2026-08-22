@@ -221,9 +221,48 @@ export function limpiarHistorial() {
  * @param {AbortSignal} [signal]
  * @returns {Promise<{contenido_id:number, estrategia:string, total:number, items:object[]}>}
  */
-export function obtenerRecomendaciones(id, { limite = 5 } = {}, signal) {
+//export function obtenerRecomendaciones(id, { limite = 5 } = {}, signal) {
+//  return peticion(() =>
+//    api.get(`/contenidos/${id}/recomendaciones`, { params: { limite }, signal }),
+//  )
+//}
+/**
+ * GET /cursos/{id}/relacionados-matriz (Modelo .pkl) con fallback a /contenidos/{id}/recomendaciones.
+ */
+export async function obtenerRecomendaciones(id, { limite = 5 } = {}, signal) {
+  try {
+    // 1. Intento primario: Tu modelo relacional (.pkl)
+    const dataMatriz = await peticion(() =>
+      api.get(`/cursos/${id}/relacionados-matriz`, { params: { limite }, signal })
+    )
+
+    if (dataMatriz?.recomendaciones && dataMatriz.recomendaciones.length > 0) {
+      return {
+        contenido_id: id,
+        estrategia: 'matriz-similitud-pkl',
+        total: dataMatriz.recomendaciones.length,
+        items: dataMatriz.recomendaciones.map((item) => {
+          const valorDecimal = (item.match_score ?? item.similitud ?? 0) / 100
+          return {
+            id: item.id,
+            titulo: item.titulo,
+            categoria: item.categoria,
+            origen: item.proveedor || 'Plataforma',
+            probabilidad: valorDecimal,
+            puntaje: valorDecimal,
+            palabras_compartidas: item.tags || [item.categoria],
+            informacion_adicional: item.tags || []
+          }
+        })
+      }
+    }
+  } catch (error) {
+    if (error.name === 'CanceledError' || error.name === 'AbortError') throw error
+  }
+
+  // 2. Fallback: Lógica original por categorías/Jaccard
   return peticion(() =>
-    api.get(`/contenidos/${id}/recomendaciones`, { params: { limite }, signal }),
+    api.get(`/contenidos/${id}/recomendaciones`, { params: { limite }, signal })
   )
 }
 
