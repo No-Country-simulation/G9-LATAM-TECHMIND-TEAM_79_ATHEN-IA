@@ -48,14 +48,12 @@ NOMBRE_COLECCION = "athenex_courses"
 #: cambiarla exige reconstruir el indice con `scripts/build_embeddings.py`.
 METADATOS_COLECCION = {"hnsw:space": "cosine"}
 
-_BASE_DIR = os.path.dirname(  # <raiz del repo>
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_BASE_DIR = os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))
 )
 
-#: Ruta canonica del indice. La version original tenia tres definiciones de la
-#: funcion de busqueda con dos rutas distintas; la duplicada
-#: (`backend/data/vector_db`) quedo con 0 embeddings.
-RUTA_INDICE = os.path.join(_BASE_DIR, "backend", "app", "data", "vector_db")
+#: Ruta canonica del indice dentro del contenedor Docker.
+RUTA_INDICE = os.path.join(_BASE_DIR, "data", "vector_db")
 
 
 def _funcion_embeddings():
