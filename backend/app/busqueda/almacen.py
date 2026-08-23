@@ -27,6 +27,20 @@ Correcciones respecto a la version original
 4. **Fallo ruidoso.** Un `print()` a stdout y una lista vacia hacian
    indistinguible "no hay resultados" de "la base no existe". Ahora se
    registra en el logger y `esta_disponible()` lo expone a la ruta.
+
+5. **Diagnostico mudo (Semana 5).** Antes de este cambio, si el modelo de
+   embeddings no cargaba (paquete ausente, sin red la primera vez que
+   `sentence-transformers` intenta bajar el modelo de Hugging Face, o una
+   version de `sentence-transformers` incompatible con la que fijo
+   `requirements.txt`), el UNICO rastro era una linea de WARNING en el log del
+   proceso. `/cursos` y `/cursos/buscar` respondian 200 con 0 resultados sin
+   forma de distinguir "no hay coincidencias" de "el indice nunca se abrio".
+   Eso fue exactamente lo que paso en un entorno local con la copia de
+   `feature/Modelo_Relacional`: el indice de Chroma tenia los 5.066 cursos
+   (igual que OCI) y el modelo de embeddings estaba descargado en cache, pero
+   la excepcion real quedaba enterrada en la consola. Ahora `_motivo_no_disponible`
+   guarda el ultimo error human-readable y `diagnostico()` lo expone por HTTP
+   via `GET /cursos/estado`, para no depender de leer logs a mano.
 """
 
 from __future__ import annotations
@@ -56,28 +70,42 @@ _BASE_DIR = os.path.dirname(
 RUTA_INDICE = os.path.join(_BASE_DIR, "data", "vector_db")
 
 
-def _funcion_embeddings():
+def _funcion_embeddings() -> tuple[object | None, str | None]:
     """
-    Funcion de embeddings de Chroma, o `None` si falta `sentence-transformers`.
+    Funcion de embeddings de Chroma, o `(None, motivo)` si no se pudo cargar.
 
     Se importa aqui dentro y no arriba a proposito: importar
     `sentence-transformers` carga PyTorch (~2 GB) y anade segundos al arranque
     de FastAPI y a CADA ejecucion de la suite de pruebas. Con la importacion
     diferida, el resto de la API arranca igual aunque la dependencia no este.
+
+    Devuelve una tupla `(funcion, motivo)` en vez de solo `funcion` porque
+    antes el `None` no distinguia entre "falta el paquete", "no hay red para
+    bajar el modelo" y "la version instalada no es compatible con la que
+    Chroma espera" — los tres casos quedaban indistinguibles en el log. El
+    `motivo` es el mensaje que despues viaja en `GET /cursos/estado`.
     """
     try:
         from chromadb.utils import embedding_functions
-    except ImportError:
-        logger.warning("chromadb no esta instalado; la busqueda vectorial queda inactiva.")
-        return None
+    except ImportError as exc:
+        motivo = f"chromadb no esta instalado ({exc})."
+        logger.warning(motivo)
+        return None, motivo
 
     try:
-        return embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name=MODELO_EMBEDDINGS
+        return (
+            embedding_functions.SentenceTransformerEmbeddingFunction(
+                model_name=MODELO_EMBEDDINGS
+            ),
+            None,
         )
-    except Exception as exc:  # modelo no descargado, sin red, sin torch...
-        logger.warning("No se pudo cargar el modelo de embeddings '%s': %s", MODELO_EMBEDDINGS, exc)
-        return None
+    except Exception as exc:  # modelo no descargado, sin red, sin torch, version incompatible...
+        motivo = (
+            f"No se pudo cargar el modelo de embeddings '{MODELO_EMBEDDINGS}': "
+            f"{type(exc).__name__}: {exc}"
+        )
+        logger.warning(motivo)
+        return None, motivo
 
 
 class AlmacenChroma:
@@ -102,6 +130,9 @@ class AlmacenChroma:
         # Conteo por categoria, memorizado en la primera llamada: solo cambia
         # al reconstruir el indice.
         self._categorias: Optional[dict] = None
+        # Ultimo motivo por el que la coleccion no se pudo abrir. `None`
+        # mientras no se haya intentado abrir, o si se abrio con exito.
+        self._motivo_no_disponible: Optional[str] = None
 
     # -- apertura perezosa ---------------------------------------------------
 
@@ -125,17 +156,20 @@ class AlmacenChroma:
 
     def _construir_coleccion(self):
         if not os.path.isdir(self.ruta):
-            logger.warning("No existe el indice vectorial en %s.", self.ruta)
+            self._motivo_no_disponible = f"No existe el indice vectorial en {self.ruta}."
+            logger.warning(self._motivo_no_disponible)
             return None
 
         try:
             import chromadb
-        except ImportError:
-            logger.warning("chromadb no esta instalado; la busqueda vectorial queda inactiva.")
+        except ImportError as exc:
+            self._motivo_no_disponible = f"chromadb no esta instalado ({exc})."
+            logger.warning(self._motivo_no_disponible)
             return None
 
-        funcion = _funcion_embeddings()
+        funcion, motivo = _funcion_embeddings()
         if funcion is None:
+            self._motivo_no_disponible = motivo
             return None
 
         try:
@@ -145,10 +179,15 @@ class AlmacenChroma:
                 embedding_function=funcion,
             )
         except Exception as exc:
-            logger.warning("No se pudo abrir la coleccion '%s': %s", self.nombre_coleccion, exc)
+            self._motivo_no_disponible = (
+                f"No se pudo abrir la coleccion '{self.nombre_coleccion}': "
+                f"{type(exc).__name__}: {exc}"
+            )
+            logger.warning(self._motivo_no_disponible)
             return None
 
         self._verificar_metrica(coleccion)
+        self._motivo_no_disponible = None
         logger.info("Indice vectorial abierto: %d cursos en %s.", coleccion.count(), self.ruta)
         return coleccion
 
@@ -185,8 +224,27 @@ class AlmacenChroma:
         try:
             return coleccion.count()
         except Exception as exc:
-            logger.warning("No se pudo contar el indice: %s", exc)
+            self._motivo_no_disponible = f"No se pudo contar el indice: {exc}"
+            logger.warning(self._motivo_no_disponible)
             return 0
+
+    def diagnostico(self) -> dict:
+        """
+        Snapshot del estado del indice para `GET /cursos/estado`.
+
+        Fuerza la apertura perezosa (si no se intento aun) para que el primer
+        diagnostico despues de arrancar ya sea informativo, en vez de
+        devolver "no se intento todavia".
+        """
+        total = self.total()
+        return {
+            "disponible": total > 0,
+            "total_indexado": total,
+            "ruta_indice": self.ruta,
+            "coleccion": self.nombre_coleccion,
+            "modelo_embeddings": MODELO_EMBEDDINGS,
+            "motivo": self._motivo_no_disponible,
+        }
 
     def consultar(self, texto: str, limite: int) -> List[dict]:
         """

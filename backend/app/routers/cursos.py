@@ -83,6 +83,34 @@ def listar_cursos(
 
 
 @router.get(
+    "/cursos/estado",
+    summary="Diagnostico del indice vectorial y del recomendador por matriz",
+    status_code=status.HTTP_200_OK,
+)
+def estado_del_catalogo(
+    buscador: BuscadorCursos = Depends(get_buscador_cursos),
+) -> dict:
+    """
+    Por que existe esta ruta: antes de esto, si `/cursos` o `/cursos/buscar`
+    devolvian 0 resultados, la UNICA forma de saber si era "no hay
+    coincidencias" o "el indice nunca se abrio" era leer el log del proceso
+    a mano. Con `feature/Modelo_Relacional` eso paso en un entorno local
+    donde el indice de Chroma SI tenia los 5.066 cursos (igual que OCI) pero
+    la excepcion real quedaba enterrada en la consola.
+
+    Golpea esta ruta despues de arrancar el backend (o despues de
+    `GET /cursos`) y compara contra `/salud`: si `motivo` no es `null` aqui,
+    ese es el error real, no un "no hay resultados".
+    """
+    from ..ml.matrix_recommender import recomendador_matriz
+
+    return {
+        "catalogo_vectorial": buscador.diagnostico(),
+        "recomendador_matriz": recomendador_matriz.diagnostico(),
+    }
+
+
+@router.get(
     "/cursos/categorias",
     summary="Categorias del catalogo con su conteo",
     response_model=RespuestaCategoriasCatalogo,
@@ -176,3 +204,35 @@ def buscar_cursos(
         total_indexado=buscador.total_indexado,
         resultados=[CursoEncontrado(**curso) for curso in encontrados],
     )
+# --- Recomendación por Matriz de Similitud (.pkl) ---
+
+@router.get(
+    "/cursos/{curso_id}/relacionados-matriz",
+    summary="Cursos recomendados usando la matriz relacional (.pkl)",
+    status_code=status.HTTP_200_OK,
+)
+def obtener_cursos_relacionados_matriz(
+    curso_id: int,
+    limite: int = Query(default=4, ge=1, le=20, description="Cantidad de recomendaciones a devolver.")
+):
+    """
+    Devuelve los cursos mas similares a partir de la matriz de similitud de NumPy (.pkl).
+    Sustituye la recomendacion fija por un match_score dinamico real.
+
+    Usa la instancia unica `recomendador_matriz` en vez de instanciar
+    `MatrixRecommender()` aqui: esta ultima deserializa ~190 MB con
+    `joblib.load()` en el `__init__`, asi que crear una por peticion
+    recargaba la matriz entera en CADA click sobre el detalle de un curso.
+    """
+    # Importación dentro de la función para evitar la dependencia circular
+    from ..ml.matrix_recommender import recomendador_matriz
+
+    resultados = recomendador_matriz.recomendar(curso_idx=curso_id, top_n=limite)
+
+    if not resultados:
+        # `motivo` es `None` cuando la matriz cargo bien y simplemente no hay
+        # (mas) cursos similares que devolver para este id; si no es `None`,
+        # el problema es que la matriz nunca se cargo (ver GET /cursos/estado).
+        return {"recomendaciones": [], "motivo": recomendador_matriz.ultimo_error}
+
+    return {"recomendaciones": resultados}

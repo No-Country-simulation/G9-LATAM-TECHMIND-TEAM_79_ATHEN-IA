@@ -7,6 +7,22 @@
  * `npm run dev` igual en cualquier maquina.
  *
  * Si no encuentra el entorno virtual, cae al `python` del PATH.
+ *
+ * HF_HUB_OFFLINE / TRANSFORMERS_OFFLINE
+ * ---------------------------------------
+ * `sentence-transformers` revalida el modelo de embeddings contra Hugging
+ * Face en CADA arranque -unas 10 peticiones HTTP (~20-25s)- aunque el modelo
+ * ya este cacheado localmente (ver `backend/scripts/precargar_modelo.py`).
+ * Con la cache ya tibia, esas peticiones no aportan nada salvo latencia y un
+ * punto de fallo mas si la red esta lenta o caida. Por eso este lanzador fija
+ * ambas variables a "1" por defecto; una exportada a mano en la shell antes de
+ * correr `npm run dev` tiene prioridad y las pisa.
+ *
+ * IMPORTANTE: correr `precargar_modelo.py` primero, SIN estas variables (asi
+ * puede salir a red la primera vez). Si todavia no precargaste el modelo y
+ * arrancas el backend directo, `/cursos` y `/cursos/buscar` van a fallar en
+ * silencio con 0 resultados porque el modelo nunca se descarga en modo
+ * offline.
  */
 import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
@@ -35,6 +51,11 @@ const proceso = spawn(
   {
     cwd: join(RAIZ, 'backend'),
     stdio: 'inherit',
+    env: {
+      ...process.env,
+      HF_HUB_OFFLINE: process.env.HF_HUB_OFFLINE ?? '1',
+      TRANSFORMERS_OFFLINE: process.env.TRANSFORMERS_OFFLINE ?? '1',
+    },
     // En Windows, spawn de un .exe no necesita shell; evitarlo previene que
     // queden procesos huerfanos al detener `concurrently`.
     shell: false,

@@ -61,10 +61,20 @@ LABEL org.opencontainers.image.title="AthenIA API" \
       org.opencontainers.image.description="Clasificacion inteligente de contenido tecnico" \
       org.opencontainers.image.vendor="Equipo AthenIA - Hackathon ONE Alura + Oracle"
 
+# HF_HUB_OFFLINE / TRANSFORMERS_OFFLINE: el modelo ya viaja horneado en la
+# imagen (etapa builder), asi que no hace falta red para usarlo. Sin este par,
+# sentence-transformers igual hace ~10 peticiones HTTP a Hugging Face en CADA
+# arranque para revalidarlo (~20-25s), y un punto de fallo mas si la VM de OCI
+# tiene salida a internet restringida o intermitente. Verificado en un entorno
+# local: el mismo sintoma de "0 cursos" que describe el comentario de mas
+# abajo puede producirse a mitad de esa revalidacion, no solo en la descarga
+# inicial que ese comentario cubre.
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:$PATH" \
     SENTENCE_TRANSFORMERS_HOME=/opt/modelos \
+    HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1 \
     ATHENIA_ENV=production \
     ATHENIA_HOST=0.0.0.0 \
     ATHENIA_PORT=8000

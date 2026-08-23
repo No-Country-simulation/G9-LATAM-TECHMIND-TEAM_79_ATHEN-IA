@@ -78,6 +78,25 @@ class BuscadorCursos:
     def total_indexado(self) -> int:
         return self._almacen.total()
 
+    def diagnostico(self) -> dict:
+        """
+        Delega en el almacen si este expone `diagnostico()` (caso de
+        `AlmacenChroma`); si no, arma uno minimo a partir del `Protocol`.
+
+        Existe para `GET /cursos/estado`: antes de esto, "el catalogo esta en
+        0" solo se podia explicar leyendo el log del proceso a mano.
+        """
+        si_diagnostico = getattr(self._almacen, "diagnostico", None)
+        if callable(si_diagnostico):
+            return si_diagnostico()
+
+        total = self.total_indexado
+        return {
+            "disponible": self.disponible,
+            "total_indexado": total,
+            "motivo": None if total > 0 else "El almacen no expone diagnostico detallado.",
+        }
+
     def buscar(
         self,
         consulta: str,

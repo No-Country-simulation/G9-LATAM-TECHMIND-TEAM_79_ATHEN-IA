@@ -119,3 +119,23 @@ if __name__ == "__main__":  # pragma: no cover
         port=settings.PORT,
         reload=not settings.es_produccion,
     )
+# --- RUTA DIRECTA DE RECOMENDACIONES (.PKL) ---
+@app.get("/recomendaciones-matriz/{curso_id}", tags=["Recomendaciones Matriz"])
+def obtener_recomendaciones_matriz(curso_id: int, limite: int = 4):
+    """
+    Devuelve recomendaciones usando la matriz de similitud de NumPy (.pkl).
+
+    Reutiliza `recomendador_matriz` (instancia unica) en vez de instanciar
+    `MatrixRecommender()` en cada request: esa version recargaba los ~190 MB
+    de la matriz con `joblib.load()` en cada llamada a este endpoint.
+    Duplica `/cursos/{id}/relacionados-matriz` a proposito (ver ese router
+    para el mismo dato con el motivo de fallo incluido); se deja este alias
+    porque el frontend ya lo referencia en algunos lugares.
+    """
+    from .ml.matrix_recommender import recomendador_matriz
+
+    resultados = recomendador_matriz.recomendar(curso_idx=curso_id, top_n=limite)
+    return {
+        "recomendaciones": resultados,
+        "motivo": recomendador_matriz.ultimo_error if not resultados else None,
+    }
