@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Bot, Send, Construction, ArrowRight, Sparkles, Search, Library } from 'lucide-react'
-import { USUARIO_DEMO, iniciales } from '../data/usuario'
+import { iniciales } from '../data/usuario'
+import { useAuth } from '../hooks/useAuth'
 
 /**
  * Vista "Asistente IA" (pantalla 06 del mockup).
@@ -56,6 +57,7 @@ const CAPACIDADES = [
 ]
 
 export default function AsistenteIA() {
+  const { usuario } = useAuth()
   return (
     <div className="space-y-6">
       <div>
@@ -96,7 +98,7 @@ export default function AsistenteIA() {
                   <p className="mt-1 text-right text-[10px] text-brand-100">{mensaje.hora}</p>
                 </div>
                 <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-tinta-700 text-[11px] font-bold text-white">
-                  {iniciales(USUARIO_DEMO.nombre)}
+                  {iniciales(usuario?.nombre)}
                 </span>
               </div>
             ) : (

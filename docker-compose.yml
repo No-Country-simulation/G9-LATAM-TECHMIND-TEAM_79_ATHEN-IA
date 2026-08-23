@@ -16,6 +16,37 @@
 # =============================================================================
 
 services:
+  # Base de usuarios (Semana 5). El historial de analisis sigue en memoria a
+  # proposito (ver repositories/memoria.py); las CUENTAS si necesitan
+  # sobrevivir a un reinicio del contenedor, por eso llevan Postgres propio.
+  athenia-db:
+    image: postgres:16-alpine
+    container_name: athenia-db
+
+    environment:
+      POSTGRES_DB: athenia
+      POSTGRES_USER: athenia
+      # CAMBIAR antes de desplegar: este valor es solo para que
+      # `docker compose up` funcione de entrada en la demo. En OCI se
+      # sobreescribe con un `.env` que NO se commitea (ver .env.example).
+      POSTGRES_PASSWORD: "CAMBIAR_ESTA_CLAVE"
+
+    volumes:
+      - athenia-db-data:/var/lib/postgresql/data
+
+    # Sin puerto publicado a proposito: solo el backend le habla, por la red
+    # interna de Docker. Publicar 5432 en una VM de OCI con IP publica es
+    # exponer la base de usuarios a internet sin necesidad.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U athenia -d athenia"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+
+    restart: unless-stopped
+    networks: [athenia]
+
   athenia-backend:
     build:
       context: ./backend
@@ -39,10 +70,19 @@ services:
       # la biblioteca vacia en un entorno real.
       ATHENIA_SEED_DEMO: "true"
 
+      # Usuarios y sesiones (Semana 5). Debe coincidir con athenia-db de arriba.
+      ATHENIA_DB_URL: "postgresql+psycopg2://athenia:CAMBIAR_ESTA_CLAVE@athenia-db:5432/athenia"
+      # OBLIGATORIO sobreescribir en el .env real de OCI (no dejar el default).
+      ATHENIA_JWT_SECRET: "CAMBIAR_ESTA_CLAVE_JWT"
+
     # Puerto expuesto para Swagger y para que QA pruebe la API directamente.
     # En OCI se puede cerrar y dejar solo el 8080 del frontend.
     ports:
       - "8000:8000"
+
+    depends_on:
+      athenia-db:
+        condition: service_healthy
 
     healthcheck:
       test:
@@ -85,3 +125,6 @@ services:
 networks:
   athenia:
     driver: bridge
+
+volumes:
+  athenia-db-data:

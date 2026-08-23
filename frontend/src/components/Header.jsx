@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, Bell, Menu } from 'lucide-react'
 import { verificarSalud } from '../services/api'
-import { USUARIO_DEMO, iniciales } from '../data/usuario'
+import { iniciales } from '../data/usuario'
+import { useAuth } from '../hooks/useAuth'
 
 /**
  * Indicador de conexion con el backend.
@@ -81,9 +82,17 @@ function EstadoBackend() {
  * Barra superior: buscador rapido, estado de la API y perfil de usuario.
  * `onAbrirMenu` despliega el Sidebar en pantallas pequenas.
  */
-export default function Header({ onAbrirMenu = () => {}, usuario = USUARIO_DEMO.nombre }) {
+export default function Header({ onAbrirMenu = () => {} }) {
   const navegar = useNavigate()
+  const { usuario: sesionUsuario } = useAuth()
   const [consulta, setConsulta] = useState('')
+
+  // `Header` solo se monta dentro de `RutaProtegida` (ver App.jsx), asi que
+  // `sesionUsuario` deberia existir siempre; el fallback es solo para no
+  // reventar el render en el instante entre "sesion cerrada" y la
+  // redireccion a /login.
+  const nombreUsuario = sesionUsuario?.nombre ?? 'Invitado'
+  const rolUsuario = sesionUsuario?.rol ?? ''
 
   const buscar = (evento) => {
     evento.preventDefault()
@@ -93,7 +102,7 @@ export default function Header({ onAbrirMenu = () => {}, usuario = USUARIO_DEMO.
     navegar(`/buscar?q=${encodeURIComponent(termino)}`)
   }
 
-  const avatar = iniciales(usuario)
+  const avatar = iniciales(nombreUsuario)
 
   return (
     <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-linea bg-panel/90 px-4 py-3 backdrop-blur-md lg:px-8">
@@ -145,8 +154,8 @@ export default function Header({ onAbrirMenu = () => {}, usuario = USUARIO_DEMO.
             {avatar}
           </span>
           <div className="hidden leading-tight sm:block">
-            <p className="text-xs font-semibold text-tinta-900">{usuario}</p>
-            <p className="text-[10px] text-tinta-600">{USUARIO_DEMO.rol}</p>
+            <p className="text-xs font-semibold text-tinta-900">{nombreUsuario}</p>
+            <p className="text-[10px] capitalize text-tinta-600">{rolUsuario}</p>
           </div>
         </div>
       </div>

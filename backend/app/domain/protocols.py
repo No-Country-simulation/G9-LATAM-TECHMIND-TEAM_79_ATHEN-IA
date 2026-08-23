@@ -281,3 +281,51 @@ class AnalisisGuardado(Protocol):
     probabilidad: float
     informacion_adicional: List[str]
     creado_en: datetime
+
+
+# ---------------------------------------------------------------------------
+# Usuarios y autenticacion (Semana 5)
+# ---------------------------------------------------------------------------
+
+
+@runtime_checkable
+class RepositorioUsuarios(Protocol):
+    """
+    Contrato de persistencia de usuarios.
+
+    Implementacion actual: `repositories.usuarios_sql.RepositorioUsuariosSQL`,
+    sobre SQLAlchemy. El mismo codigo sirve para SQLite (desarrollo local y
+    pruebas, sin infraestructura) y Postgres (`ATHENIA_DB_URL` en produccion,
+    ver `docker-compose.yml` — el servicio `athenia-db`): el dialecto lo decide
+    la URL de conexion, no el codigo de la aplicacion.
+
+    Igual que `RepositorioContenidos`, las rutas y `auth_service` dependen
+    solo de esta forma: cambiar de motor de base de datos no toca ni una linea
+    de `routers/auth.py`.
+    """
+
+    def crear(self, email: str, password_hash: str, nombre: str, rol: str) -> dict:
+        """
+        Crea un usuario y devuelve el registro con `id` y `creado_en`.
+
+        Debe lanzar `ValueError` si `email` ya existe — es la unica regla de
+        integridad que el dominio necesita expresar aqui; el codigo de
+        estado HTTP (409) lo decide `routers/auth.py`, no este contrato.
+        """
+        ...
+
+    def obtener_por_email(self, email: str) -> Optional[dict]:
+        """Un usuario por su email (case-insensitive), o `None` si no existe."""
+        ...
+
+    def obtener_por_id(self, usuario_id: int) -> Optional[dict]:
+        """Un usuario por su id, o `None` si no existe."""
+        ...
+
+    def listar(self) -> List[dict]:
+        """Todos los usuarios registrados, del mas reciente al mas antiguo."""
+        ...
+
+    def total(self) -> int:
+        """Cantidad de usuarios registrados. Determina el rol del primer registro."""
+        ...

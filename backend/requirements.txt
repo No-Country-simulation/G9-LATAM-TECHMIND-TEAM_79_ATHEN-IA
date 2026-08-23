@@ -42,6 +42,20 @@ numpy>=2.0.0
 chromadb==1.5.9
 sentence-transformers==3.3.1
 
+# --- Usuarios y autenticacion (Semana 5) --------------------------------------
+# SQLAlchemy sirve a SQLite (desarrollo/pruebas, cero infraestructura) y a
+# Postgres (produccion en OCI, ver docker-compose.yml) con el mismo codigo:
+# el dialecto lo decide ATHENIA_DB_URL, no el runtime.
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.10
+# Version fijada a proposito: passlib 1.7.4 con bcrypt>=4.1 choca con un
+# atributo interno (`__about__`) que passlib espera y bcrypt dejo de exponer,
+# y lanza un warning en cada hash. bcrypt 4.0.1 es la ultima version sin ese
+# problema.
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+python-jose[cryptography]==3.3.0
+
 # --- Pruebas / QA ------------------------------------------------------------
 pytest==8.3.4
 httpx==0.28.1

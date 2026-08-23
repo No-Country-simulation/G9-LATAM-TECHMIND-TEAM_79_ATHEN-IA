@@ -51,3 +51,9 @@ yarn-error.log*
 # porque ya estaba versionado antes de anadirse la regla).
 !.env.example
 !**/.env.example
+
+# ---------- Base de usuarios local (Semana 5) ----------
+# SQLite de desarrollo (fallback cuando ATHENIA_DB_URL no esta definido).
+# Nunca debe versionarse: contiene hashes de contrasenas reales del equipo.
+backend/data/*.db
+backend/data/*.sqlite3

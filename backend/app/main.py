@@ -31,7 +31,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from . import services
 from .config import settings
 from .errors import configurar_manejo_de_errores
-from .routers import analiticas, contenido, cursos, salud
+from .routers import analiticas, auth, contenido, cursos, salud
 from .schemas import ErrorResponse
 
 logging.basicConfig(
@@ -60,6 +60,14 @@ async def lifespan(app: FastAPI):
     sembrados = services.sembrar_demo()
     if sembrados:
         logger.info("Historial precargado con %d contenidos de demo.", sembrados)
+
+    if settings.es_produccion and settings.jwt_secreto_por_defecto:
+        # No se bloquea el arranque (el jurado necesita que la demo funcione),
+        # pero queda gritando en los logs de OCI hasta que se configure.
+        logger.warning(
+            "ATHENIA_JWT_SECRET no esta configurado en produccion: los tokens "
+            "de sesion se firman con la clave de desarrollo publica del repo."
+        )
 
     yield
 
@@ -108,6 +116,7 @@ app.include_router(salud.router)
 app.include_router(contenido.router)
 app.include_router(analiticas.router)
 app.include_router(cursos.router)
+app.include_router(auth.router)
 
 
 if __name__ == "__main__":  # pragma: no cover
@@ -119,6 +128,8 @@ if __name__ == "__main__":  # pragma: no cover
         port=settings.PORT,
         reload=not settings.es_produccion,
     )
+
+
 # --- RUTA DIRECTA DE RECOMENDACIONES (.PKL) ---
 @app.get("/recomendaciones-matriz/{curso_id}", tags=["Recomendaciones Matriz"])
 def obtener_recomendaciones_matriz(curso_id: int, limite: int = 4):
@@ -138,4 +149,4 @@ def obtener_recomendaciones_matriz(curso_id: int, limite: int = 4):
     return {
         "recomendaciones": resultados,
         "motivo": recomendador_matriz.ultimo_error if not resultados else None,
-    }
+    }

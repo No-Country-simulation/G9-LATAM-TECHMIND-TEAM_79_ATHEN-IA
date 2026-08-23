@@ -71,18 +71,29 @@ def configurar_manejo_de_errores(app: FastAPI) -> None:
 
     @app.exception_handler(StarletteHTTPException)
     async def error_http(request: Request, exc: StarletteHTTPException):
-        """Normaliza 404, 405 y demas errores HTTP al formato `ErrorResponse`."""
+        """
+        Normaliza 404, 405 y demas errores HTTP al formato `ErrorResponse`.
+
+        Para codigos SIN mensaje curado abajo (401, 403, 409... — los que usa
+        `routers/auth.py`), se usa `exc.detail` como `mensaje` si es un texto:
+        esas rutas ya redactan un `detail` pensado para mostrarse tal cual
+        ("Correo o contrasena incorrectos.", "Ya existe una cuenta con..."),
+        y el generico "No se pudo procesar la peticion." era peor que repetirlo.
+        """
         mensajes = {
             404: "El recurso solicitado no existe.",
             405: "El metodo HTTP no esta permitido para esta ruta.",
         }
+        detail_como_texto = exc.detail if isinstance(exc.detail, str) else None
+        mensaje = mensajes.get(exc.status_code) or detail_como_texto or "No se pudo procesar la peticion."
+
         return JSONResponse(
             status_code=exc.status_code,
             content=jsonable_encoder(
                 ErrorResponse(
                     error=f"http_{exc.status_code}",
-                    mensaje=mensajes.get(exc.status_code, "No se pudo procesar la peticion."),
-                    detail=exc.detail if isinstance(exc.detail, str) else None,
+                    mensaje=mensaje,
+                    detail=detail_como_texto,
                 )
             ),
             headers=getattr(exc, "headers", None),

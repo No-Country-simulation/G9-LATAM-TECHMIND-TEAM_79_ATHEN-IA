@@ -626,6 +626,79 @@ class RespuestaCategoriasCatalogo(BaseModel):
     )
 
 
+# ===========================================================================
+# Usuarios y autenticacion (Semana 5)
+# ===========================================================================
+
+
+class UsuarioRegistro(BaseModel):
+    """Payload de entrada para `POST /auth/registro`."""
+
+    email: str = Field(..., max_length=255, description="Correo del usuario. Debe ser unico.")
+    password: str = Field(
+        ...,
+        min_length=8,
+        max_length=128,
+        description="Contrasena en texto plano. Nunca se guarda ni se loggea asi.",
+    )
+    nombre: str = Field(..., min_length=1, max_length=200, description="Nombre para mostrar.")
+
+    @field_validator("email")
+    @classmethod
+    def email_normalizado(cls, valor: str) -> str:
+        limpio = valor.strip().lower()
+        if "@" not in limpio or limpio.startswith("@") or limpio.endswith("@"):
+            raise ValueError("El correo no tiene un formato valido.")
+        return limpio
+
+    @field_validator("nombre")
+    @classmethod
+    def nombre_sin_espacios_extra(cls, valor: str) -> str:
+        limpio = valor.strip()
+        if not limpio:
+            raise ValueError("El nombre no puede estar vacio.")
+        return limpio
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {"email": "ferney@athenia.dev", "password": "unaClaveSegura123", "nombre": "Ferney"}
+            ]
+        }
+    )
+
+
+class UsuarioLogin(BaseModel):
+    """Payload de entrada para `POST /auth/login`."""
+
+    email: str = Field(..., max_length=255)
+    password: str = Field(..., min_length=1, max_length=128)
+
+
+class UsuarioOutput(BaseModel):
+    """Un usuario, SIN el hash de la contrasena. Es lo unico que sale de la API."""
+
+    id: int = Field(..., description="Identificador unico del usuario.")
+    email: str = Field(..., description="Correo del usuario.")
+    nombre: str = Field(..., description="Nombre para mostrar.")
+    rol: Literal["admin", "estudiante"] = Field(
+        ...,
+        description=(
+            "El primer usuario registrado en una instalacion nueva de AthenIA "
+            "recibe 'admin' automaticamente; el resto entra como 'estudiante'."
+        ),
+    )
+    creado_en: datetime = Field(..., description="Fecha de registro (UTC).")
+
+
+class TokenOutput(BaseModel):
+    """Respuesta de `POST /auth/registro` y `POST /auth/login`."""
+
+    access_token: str = Field(..., description="JWT a enviar como 'Authorization: Bearer <token>'.")
+    token_type: Literal["bearer"] = Field(default="bearer")
+    usuario: UsuarioOutput
+
+
 # Resuelve las referencias adelantadas usadas en `MetricasOutput` y
 # `AnaliticasOutput` (ambos citan `ConteoPalabraClave` antes de su definicion).
 MetricasOutput.model_rebuild()

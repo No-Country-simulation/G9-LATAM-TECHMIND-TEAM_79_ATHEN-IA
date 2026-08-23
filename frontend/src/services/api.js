@@ -5,6 +5,7 @@
  * produccion (OCI) es cuestion de ajustar VITE_API_URL en el archivo .env.
  */
 import axios from 'axios'
+import { leerToken } from './sesion'
 
 // En desarrollo se usa el proxy de Vite ("/api" -> http://127.0.0.1:8000),
 // asi no hay que preocuparse por CORS ni por puertos al hacer la demo.
@@ -14,6 +15,18 @@ const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 20000,
   headers: { 'Content-Type': 'application/json' },
+})
+
+// Adjunta el JWT de sesion (si hay una) a cada peticion. Se lee de
+// `localStorage` en cada request en vez de guardarse en una variable del
+// modulo, para que un login/logout en OTRA pestaña se refleje de inmediato
+// sin tener que recargar esta.
+api.interceptors.request.use((config) => {
+  const token = leerToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
 })
 
 /**
@@ -56,6 +69,38 @@ async function peticion(ejecutar) {
   } catch (error) {
     throw new Error(mensajeDeError(error))
   }
+}
+
+// ---------------------------------------------------------------------------
+// Autenticacion (Semana 5)
+// ---------------------------------------------------------------------------
+
+/**
+ * POST /auth/registro - crea una cuenta y devuelve un token (login automatico).
+ *
+ * El primer usuario de una instalacion nueva de AthenIA recibe el rol
+ * 'admin' automaticamente; el resto entra como 'estudiante'.
+ *
+ * @param {{email: string, password: string, nombre: string}} datos
+ * @returns {Promise<{access_token:string, token_type:string, usuario:object}>}
+ */
+export function registrarUsuario({ email, password, nombre }) {
+  return peticion(() => api.post('/auth/registro', { email, password, nombre }))
+}
+
+/**
+ * POST /auth/login - autentica y devuelve un token.
+ *
+ * @param {{email: string, password: string}} credenciales
+ * @returns {Promise<{access_token:string, token_type:string, usuario:object}>}
+ */
+export function iniciarSesion({ email, password }) {
+  return peticion(() => api.post('/auth/login', { email, password }))
+}
+
+/** GET /auth/me - usuario dueño del token adjunto por el interceptor de arriba. */
+export function obtenerUsuarioActual() {
+  return peticion(() => api.get('/auth/me'))
 }
 
 // ---------------------------------------------------------------------------
