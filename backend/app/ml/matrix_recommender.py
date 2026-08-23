@@ -40,8 +40,8 @@ logger = logging.getLogger("athenia.ml.matrix_recommender")
 
 # Calcula la ruta absoluta apuntando a la carpeta 'Data' en la raíz del proyecto
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))  # .../app/ml
-BACKEND_DIR = os.path.dirname(os.path.dirname(CURRENT_DIR))  # .../backend
-ROOT_DIR = os.path.dirname(BACKEND_DIR)  # Raíz del proyecto
+BACKEND_DIR = os.path.dirname(os.path.dirname(CURRENT_DIR))  # /app
+ROOT_DIR = BACKEND_DIR  # Raíz del runtime dentro del contenedor
 
 MODEL_PATH = os.path.join(ROOT_DIR, "Data", "matriz_similitud_cursos.pkl")
 MAPEO_PATH = os.path.join(ROOT_DIR, "Data", "mapeo_cursos.json")

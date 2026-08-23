@@ -49,8 +49,8 @@ services:
 
   athenia-backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     image: athenia-backend:latest
     container_name: athenia-backend
 

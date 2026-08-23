@@ -1,0 +1,27 @@
+.git/
+.github/
+docs/
+frontend/
+tests/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+*.md
+.env
+.env.*
+backend/Dockerfile
+backend/.dockerignore
+backend/Dockerfile.bak
+backend/tests/
+backend/htmlcov/
+backend/.pytest_cache/
+backend/__pycache__/
+
+# Data no necesaria para el runtime del backend
+Data/Online_Courses_limpios1.csv
+Data/cursos_dataset.json
+Data/ejemplo

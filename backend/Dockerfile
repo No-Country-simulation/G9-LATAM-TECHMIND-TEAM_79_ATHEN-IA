@@ -29,7 +29,7 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 # Capa cacheable: solo se reconstruye si cambian las dependencias.
-COPY requirements.txt .
+COPY backend/requirements.txt .
 
 RUN python -m venv /opt/venv \
  && /opt/venv/bin/pip install --upgrade pip \
@@ -90,8 +90,11 @@ COPY --from=builder /opt/modelos /opt/modelos
 # igual que el .pkl del clasificador. Si algun dia se excluye en el
 # .dockerignore, `/cursos/buscar` respondera 200 con lista vacia sin error
 # visible: el mismo modo de fallo silencioso que ya documenta models/.
-COPY app ./app
-COPY models ./models
+COPY backend/app ./app
+COPY backend/models ./models
+RUN mkdir -p Data
+COPY Data/matriz_similitud_cursos.pkl ./Data/matriz_similitud_cursos.pkl
+COPY Data/mapeo_cursos.json ./Data/mapeo_cursos.json
 
 # Usuario sin privilegios: requisito de las politicas de seguridad de OCI.
 RUN useradd --create-home --shell /usr/sbin/nologin athenia \
