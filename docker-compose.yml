@@ -24,12 +24,12 @@ services:
     container_name: athenia-db
 
     environment:
-      POSTGRES_DB: athenia
-      POSTGRES_USER: athenia
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
       # CAMBIAR antes de desplegar: este valor es solo para que
       # `docker compose up` funcione de entrada en la demo. En OCI se
       # sobreescribe con un `.env` que NO se commitea (ver .env.example).
-      POSTGRES_PASSWORD: "CAMBIAR_ESTA_CLAVE"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
     volumes:
       - athenia-db-data:/var/lib/postgresql/data
@@ -71,14 +71,14 @@ services:
       ATHENIA_SEED_DEMO: "true"
 
       # Usuarios y sesiones (Semana 5). Debe coincidir con athenia-db de arriba.
-      ATHENIA_DB_URL: "postgresql+psycopg2://athenia:CAMBIAR_ESTA_CLAVE@athenia-db:5432/athenia"
+      ATHENIA_DB_URL: ${ATHENIA_DB_URL}
       # OBLIGATORIO sobreescribir en el .env real de OCI (no dejar el default).
-      ATHENIA_JWT_SECRET: "CAMBIAR_ESTA_CLAVE_JWT"
+      ATHENIA_JWT_SECRET: ${ATHENIA_JWT_SECRET}
 
     # Puerto expuesto para Swagger y para que QA pruebe la API directamente.
     # En OCI se puede cerrar y dejar solo el 8080 del frontend.
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
 
     depends_on:
       athenia-db:
@@ -111,7 +111,7 @@ services:
     container_name: athenia-frontend
 
     ports:
-      - "8080:80"
+      - "127.0.0.1:8080:80"
 
     # Nginx hace proxy_pass a `athenia-backend`; si arranca antes de que el
     # backend este sano, las primeras peticiones fallarian con 502.

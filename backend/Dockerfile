@@ -96,6 +96,10 @@ RUN mkdir -p Data
 COPY Data/matriz_similitud_cursos.pkl ./Data/matriz_similitud_cursos.pkl
 COPY Data/mapeo_cursos.json ./Data/mapeo_cursos.json
 
+# Verificar que Git LFS entrego el archivo real y no un puntero.
+# El puntero LFS comienza literalmente con esta firma.
+RUN python -c "from pathlib import Path; p=Path('/app/Data/matriz_similitud_cursos.pkl'); b=p.read_bytes()[:80]; assert not b.startswith(b'version https://git-lfs.github.com/spec/v1'), 'ERROR: matriz_similitud_cursos.pkl es un puntero Git LFS, no el archivo real'; assert p.stat().st_size > 1000000, 'ERROR: matriz_similitud_cursos.pkl tiene un tamano sospechosamente pequeno'; print(f'OK: matriz LFS real detectada ({p.stat().st_size / 1024 / 1024:.1f} MB)')"
+
 # Usuario sin privilegios: requisito de las politicas de seguridad de OCI.
 RUN useradd --create-home --shell /usr/sbin/nologin athenia \
  && chown -R athenia:athenia /app

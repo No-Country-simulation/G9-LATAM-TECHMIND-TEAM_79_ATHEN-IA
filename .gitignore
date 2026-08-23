@@ -57,3 +57,4 @@ yarn-error.log*
 # Nunca debe versionarse: contiene hashes de contrasenas reales del equipo.
 backend/data/*.db
 backend/data/*.sqlite3
+docker-compose.yml.backup-seguridad-*
