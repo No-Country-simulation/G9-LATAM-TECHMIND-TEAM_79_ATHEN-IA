@@ -7,8 +7,8 @@
 Plataforma que recibe contenido técnico, lo clasifica con Inteligencia Artificial,
 extrae palabras clave y devuelve métricas en formato JSON.
 
-[![Tests](https://img.shields.io/badge/tests-120%20passed-brightgreen)](docs/QA_TESTING_GUIDE.md)
-[![Coverage](https://img.shields.io/badge/coverage-96.72%25-brightgreen)](docs/QA_TESTING_GUIDE.md)
+[![Tests](https://img.shields.io/badge/tests-311%20passed-brightgreen)](docs/QA_TESTING_GUIDE.md)
+[![Coverage](https://img.shields.io/badge/coverage-90.80%25-brightgreen)](docs/QA_TESTING_GUIDE.md)
 [![Backend](https://img.shields.io/badge/backend-FastAPI-009688?logo=fastapi&logoColor=white)](backend/)
 [![Frontend](https://img.shields.io/badge/frontend-React%2019-61DAFB?logo=react&logoColor=black)](frontend/)
 [![Python](https://img.shields.io/badge/python-3.13-3776AB?logo=python&logoColor=white)](backend/requirements.txt)
@@ -114,7 +114,7 @@ proyecto-mvp-hakaton/
 │   │   ├── clasificador_cursos.pkl   Artefacto entrenado (Pipeline TF-IDF + MultinomialNB)
 │   │   └── README.md                 Contrato del artefacto para Data Science
 │   │
-│   ├── tests/                        120 pruebas · 96.72% cobertura
+│   ├── tests/                        311 pruebas · 90.80% cobertura
 │   │   ├── conftest.py               Fixtures compartidas
 │   │   ├── test_api.py               Contrato, reglas de negocio y modelo ML
 │   │   ├── test_recomendaciones.py   CP-200…CP-222 (Semana 4)
@@ -570,7 +570,7 @@ Filtrar por grupo de casos:
 pytest -k "validacion or historial"
 ```
 
-### Estado actual: 120 pruebas en verde · 96.72% de cobertura
+### Estado actual: 311 pruebas en verde · 90.80% de cobertura
 
 La cobertura se mide en cada ejecución (`pytest.ini` incluye
 `--cov-fail-under=85`), así que **la suite falla si baja del 85%**. Es la misma
