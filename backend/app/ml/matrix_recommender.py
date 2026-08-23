@@ -126,11 +126,21 @@ class MatrixRecommender:
                 categoria = info.get("categoria", "Desarrollo y Tecnología")
                 proveedor = info.get("proveedor", "Plataforma")
                 tags = info.get("tags", [])
+                # `url` y `descripcion` los agrega
+                # `scripts/enriquecer_mapeo_cursos.py`, cruzando por titulo
+                # contra `Data/cursos_dataset.json` (el mismo dataset que usa
+                # el buscador). Un `mapeo_cursos.json` viejo, generado antes
+                # de correr ese script, puede no tenerlos todavia — de ahi el
+                # default a "".
+                url = info.get("url", "")
+                descripcion = info.get("descripcion", "")
             else:
                 titulo = str(info)
                 categoria = "Desarrollo y Tecnología"
                 proveedor = "Plataforma"
                 tags = []
+                url = ""
+                descripcion = ""
 
             resultados.append(
                 {
@@ -140,6 +150,8 @@ class MatrixRecommender:
                     "proveedor": proveedor,
                     "match_score": score,
                     "tags": tags,
+                    "url": url,
+                    "descripcion": descripcion,
                 }
             )
 

@@ -14,6 +14,9 @@ backend/models/*.joblib
 backend/models/*.pkl
 backend/models/*.pickle
 
+# Respaldo automatico de scripts/enriquecer_mapeo_cursos.py (no se versiona)
+Data/*.json.bak
+
 # ---------- Node / Frontend ----------
 node_modules/
 dist/

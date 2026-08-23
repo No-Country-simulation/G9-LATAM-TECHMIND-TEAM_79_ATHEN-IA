@@ -296,7 +296,12 @@ export async function obtenerRecomendaciones(id, { limite = 5 } = {}, signal) {
             probabilidad: valorDecimal,
             puntaje: valorDecimal,
             palabras_compartidas: item.tags || [item.categoria],
-            informacion_adicional: item.tags || []
+            informacion_adicional: item.tags || [],
+            // Agregados por `scripts/enriquecer_mapeo_cursos.py` en el backend
+            // (cruce por titulo contra `Data/cursos_dataset.json`). Un mapeo
+            // viejo puede no traerlos todavia, de ahi el default a ''.
+            descripcion: item.descripcion || '',
+            url: item.url || ''
           }
         })
       }
