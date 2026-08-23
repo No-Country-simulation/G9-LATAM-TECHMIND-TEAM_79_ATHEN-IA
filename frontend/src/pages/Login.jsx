@@ -1,34 +1,48 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, Info } from 'lucide-react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { Eye, EyeOff, Info, Loader2 } from 'lucide-react'
 import Logo from '../components/Logo'
+import { useAuth } from '../hooks/useAuth'
 
 /**
  * Pantalla de acceso (pantalla 01 del mockup).
  *
- * ⚠️ PROTOTIPO VISUAL — no hay autenticacion.
+ * Autenticacion real (Semana 5): valida contra `POST /auth/login` /
+ * `POST /auth/registro` y guarda el JWT devuelto (ver `hooks/useAuth.js`).
+ * El resto de la aplicacion queda detras de `RutaProtegida` (`App.jsx`): sin
+ * sesion, cualquier ruta redirige aqui.
  *
- * El backend no expone `/login` ni emite tokens: la autenticacion es una de
- * las piezas declaradas como posteriores al MVP. Esta vista reproduce el
- * diseño de referencia, pero **no valida credenciales**: el boton lleva
- * directamente al Dashboard.
- *
- * Se deja un aviso visible en la propia pantalla en vez de aparentar un login
- * real. Si durante la demo alguien escribe una contraseña cualquiera y entra
- * igual, es mejor que ya supiera que es una maqueta.
- *
- * La ruta es `/login` y NO protege nada: el resto de la aplicacion sigue
- * siendo accesible directamente, como hasta ahora.
+ * El primer usuario que se registra en una instalacion nueva de AthenIA
+ * recibe el rol 'admin' automaticamente (ver `domain.usuarios.rol_por_defecto`
+ * en el backend); el resto entra como 'estudiante'.
  */
 export default function Login() {
   const navegar = useNavigate()
+  const ubicacion = useLocation()
+  const { iniciarSesion, registrarse, cargando, error, limpiarError } = useAuth()
+
+  const [modo, setModo] = useState('login') // 'login' | 'registro'
   const [correo, setCorreo] = useState('')
   const [clave, setClave] = useState('')
+  const [nombre, setNombre] = useState('')
   const [verClave, setVerClave] = useState(false)
 
-  const entrar = (evento) => {
+  const destino = ubicacion.state?.desde?.pathname || '/'
+
+  const cambiarModo = (nuevoModo) => {
+    setModo(nuevoModo)
+    limpiarError()
+  }
+
+  const enviar = async (evento) => {
     evento.preventDefault()
-    navegar('/')
+
+    const exito =
+      modo === 'login' ? await iniciarSesion(correo, clave) : await registrarse(correo, clave, nombre)
+
+    if (exito) {
+      navegar(destino, { replace: true })
+    }
   }
 
   return (
@@ -67,25 +81,54 @@ export default function Login() {
           </div>
 
           <h2 className="text-center text-2xl font-bold tracking-tight text-tinta-900">
-            Bienvenido de nuevo
+            {modo === 'login' ? 'Bienvenido de nuevo' : 'Crea tu cuenta'}
           </h2>
           <p className="mt-1.5 text-center text-sm text-tinta-500">
-            Inicia sesion para continuar
+            {modo === 'login' ? 'Inicia sesion para continuar' : 'Un minuto y estas dentro'}
           </p>
 
-          {/* Aviso honesto: la pantalla es una maqueta. */}
-          <div
-            role="status"
-            className="mt-6 flex items-start gap-2.5 rounded-xl border border-brand-100 bg-brand-50 p-3"
-          >
-            <Info size={15} className="mt-0.5 shrink-0 text-brand-600" aria-hidden="true" />
-            <p className="text-xs leading-relaxed text-brand-700">
-              Prototipo visual: la autenticacion llega despues del MVP. Cualquier
-              dato te lleva al panel.
-            </p>
-          </div>
+          {/* El primer registro de una instalacion nueva queda como admin. */}
+          {modo === 'registro' && (
+            <div
+              role="status"
+              className="mt-6 flex items-start gap-2.5 rounded-xl border border-brand-100 bg-brand-50 p-3"
+            >
+              <Info size={15} className="mt-0.5 shrink-0 text-brand-600" aria-hidden="true" />
+              <p className="text-xs leading-relaxed text-brand-700">
+                Si eres la primera persona en registrarse en este AthenIA, tu
+                cuenta queda como administradora automaticamente.
+              </p>
+            </div>
+          )}
 
-          <form onSubmit={entrar} className="mt-6 space-y-4">
+          {error && (
+            <div
+              role="alert"
+              className="mt-6 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700"
+            >
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={enviar} className="mt-6 space-y-4">
+            {modo === 'registro' && (
+              <div>
+                <label htmlFor="nombre" className="mb-1.5 block text-sm font-medium text-tinta-700">
+                  Nombre
+                </label>
+                <input
+                  id="nombre"
+                  type="text"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  placeholder="Tu nombre"
+                  autoComplete="name"
+                  required
+                  className="input-base"
+                />
+              </div>
+            )}
+
             <div>
               <label htmlFor="correo" className="mb-1.5 block text-sm font-medium text-tinta-700">
                 Correo electronico
@@ -97,6 +140,7 @@ export default function Login() {
                 onChange={(e) => setCorreo(e.target.value)}
                 placeholder="ejemplo@correo.com"
                 autoComplete="username"
+                required
                 className="input-base"
               />
             </div>
@@ -112,7 +156,9 @@ export default function Login() {
                   value={clave}
                   onChange={(e) => setClave(e.target.value)}
                   placeholder="••••••••"
-                  autoComplete="current-password"
+                  autoComplete={modo === 'login' ? 'current-password' : 'new-password'}
+                  minLength={modo === 'registro' ? 8 : undefined}
+                  required
                   className="input-base pr-11"
                 />
                 <button
@@ -125,19 +171,49 @@ export default function Login() {
                 </button>
               </div>
 
-              <div className="mt-1.5 text-right">
-                <span className="text-xs text-tinta-500">¿Olvidaste tu contrasena?</span>
-              </div>
+              {modo === 'registro' && (
+                <p className="mt-1.5 text-xs text-tinta-500">Minimo 8 caracteres.</p>
+              )}
             </div>
 
-            <button type="submit" className="btn-primary w-full">
-              Iniciar sesion
+            <button type="submit" disabled={cargando} className="btn-primary w-full">
+              {cargando ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 size={16} className="animate-spin" />
+                  {modo === 'login' ? 'Ingresando...' : 'Creando cuenta...'}
+                </span>
+              ) : modo === 'login' ? (
+                'Iniciar sesion'
+              ) : (
+                'Crear cuenta'
+              )}
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-tinta-500">
-            ¿No tienes una cuenta?{' '}
-            <span className="font-semibold text-brand-600">Registrate</span>
+            {modo === 'login' ? (
+              <>
+                ¿No tienes una cuenta?{' '}
+                <button
+                  type="button"
+                  onClick={() => cambiarModo('registro')}
+                  className="font-semibold text-brand-600 hover:underline"
+                >
+                  Registrate
+                </button>
+              </>
+            ) : (
+              <>
+                ¿Ya tienes cuenta?{' '}
+                <button
+                  type="button"
+                  onClick={() => cambiarModo('login')}
+                  className="font-semibold text-brand-600 hover:underline"
+                >
+                  Inicia sesion
+                </button>
+              </>
+            )}
           </p>
         </div>
       </main>

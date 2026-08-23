@@ -17,6 +17,7 @@ import AnalyticsPanel from '../components/AnalyticsPanel'
 import { useAnaliticas, useContenidos } from '../hooks/useContenidos'
 import { aPorcentaje, colorDeCategoria, formatearFecha } from '../data/categorias'
 import { nombreDePila } from '../data/usuario'
+import { useAuth } from '../hooks/useAuth'
 
 const RADIO = 54
 const CIRCUNFERENCIA = 2 * Math.PI * RADIO
@@ -145,6 +146,7 @@ function SinDatos() {
 
 /** Vista principal: metricas generales alimentadas por el historial real. */
 export default function Dashboard() {
+  const { usuario } = useAuth()
   const { analiticas, cargando: cargandoMetricas, error, refrescar } = useAnaliticas()
   const { items: recientes, cargando: cargandoRecientes } = useContenidos({
     limite: 4,
@@ -159,7 +161,7 @@ export default function Dashboard() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-tinta-900">
-            Hola, {nombreDePila()} <span className="inline-block">👋</span>
+            Hola, {nombreDePila(usuario?.nombre)} <span className="inline-block">👋</span>
           </h1>
           <p className="mt-1 text-sm text-tinta-500">
             Este es el resumen de tu biblioteca de conocimiento tecnico.

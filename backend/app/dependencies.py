@@ -33,11 +33,22 @@ resuelve `Depends(get_clasificador)` en cada peticion, asi que:
 
 from __future__ import annotations
 
-from . import services
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+from . import auth_service, services
 from .busqueda.almacen import AlmacenChroma
 from .busqueda.servicio import BuscadorCursos
-from .domain.protocols import Clasificador, MotorRecomendaciones, RepositorioContenidos
+from .config import settings
+from .domain.protocols import (
+    Clasificador,
+    MotorRecomendaciones,
+    RepositorioContenidos,
+    RepositorioUsuarios,
+)
+from .domain.seguridad import decodificar_token
 from .recomendador import RecomendadorPorKeywords
+from .repositories.usuarios_sql import RepositorioUsuariosSQL
 
 # Instancia unica del motor de recomendaciones. Es sin estado (solo calcula
 # sobre los candidatos que recibe), asi que compartirla entre peticiones es
@@ -52,6 +63,18 @@ _recomendador = RecomendadorPorKeywords()
 # `SentenceTransformer` en CADA peticion: cientos de milisegundos por busqueda
 # y varias copias del modelo en memoria bajo carga concurrente.
 _buscador_cursos = BuscadorCursos(AlmacenChroma())
+
+# Instancia unica del repositorio de usuarios. A diferencia del clasificador,
+# NO se reconstruye en cada peticion: abrir un engine de SQLAlchemy por
+# request agotaria el pool de conexiones bajo carga. `settings.DB_URL` decide
+# si esto es un archivo SQLite (desarrollo) o Postgres (`athenia-db` en
+# `docker-compose.yml`, produccion) — ver `repositories/usuarios_sql.py`.
+_repositorio_usuarios = RepositorioUsuariosSQL(settings.DB_URL)
+
+# `auto_error=False`: se prefiere devolver un 401 con el formato uniforme de
+# `ErrorResponse` (via `HTTPException` propia) antes que el 403 generico que
+# FastAPI arma cuando falta el header `Authorization`.
+_esquema_bearer = HTTPBearer(auto_error=False)
 
 
 def get_clasificador() -> Clasificador:
@@ -97,3 +120,71 @@ def get_buscador_cursos() -> BuscadorCursos:
     modelo de embeddings.
     """
     return _buscador_cursos
+
+
+def get_repositorio_usuarios() -> RepositorioUsuarios:
+    """
+    Devuelve el repositorio de usuarios activo.
+
+    Las pruebas de auth sustituyen esta dependencia con
+    `app.dependency_overrides[get_repositorio_usuarios] = lambda: doble`,
+    apuntando a un `RepositorioUsuariosSQL("sqlite:///:memory:")` propio por
+    sesion de pruebas — nunca tocan el archivo de desarrollo ni Postgres.
+    """
+    return _repositorio_usuarios
+
+
+def get_usuario_actual(
+    credenciales: HTTPAuthorizationCredentials | None = Depends(_esquema_bearer),
+    repositorio: RepositorioUsuarios = Depends(get_repositorio_usuarios),
+) -> dict:
+    """
+    Resuelve el usuario autenticado a partir del header `Authorization: Bearer <token>`.
+
+    Unifica en un solo 401 los tres motivos por los que puede fallar (sin
+    header, token invalido/expirado, o usuario borrado tras emitirse el
+    token): al cliente le basta con saber que debe volver a iniciar sesion,
+    no por cual de los tres paso.
+    """
+    if credenciales is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Se requiere autenticacion. Envia el token en 'Authorization: Bearer <token>'.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    payload = decodificar_token(credenciales.credentials)
+    usuario = auth_service.obtener_usuario_desde_payload(repositorio, payload)
+    if usuario is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Sesion invalida o expirada. Inicia sesion de nuevo.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return usuario
+
+
+def requiere_rol(*roles_permitidos: str):
+    """
+    Fabrica de dependencias para proteger rutas por rol (RBAC).
+
+    Uso:
+        @router.get("/auth/usuarios")
+        def listar(usuario: dict = Depends(requiere_rol("admin"))): ...
+
+    Se implementa como una fabrica (funcion que devuelve una dependencia) y no
+    como una dependencia fija, porque distintas rutas necesitan distintos
+    roles — `Depends(requiere_rol("admin"))` en una,
+    `Depends(requiere_rol("admin", "estudiante"))` en otra — sin duplicar la
+    logica de comparacion en cada router.
+    """
+
+    def _verificar(usuario: dict = Depends(get_usuario_actual)) -> dict:
+        if usuario["rol"] not in roles_permitidos:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tienes permiso para acceder a este recurso.",
+            )
+        return usuario
+
+    return _verificar

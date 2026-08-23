@@ -36,6 +36,7 @@ Hackathon **ONE Alura + Oracle** / **No Country** — Generación 9
 - [Pruebas](#-pruebas)
 - [Docker](#-docker)
 - [Variables de entorno](#-variables-de-entorno)
+- [Autenticación y usuarios](#-autenticación-y-usuarios-semana-5)
 - [Integración del modelo de IA](#-integración-del-modelo-de-ia)
 - [Documentación del proyecto](#-documentación-del-proyecto)
 - [Roadmap](#-roadmap)
@@ -364,6 +365,10 @@ y consulta los logs del backend, que indican en qué etapa falló.
 | `GET` | `/contenidos/{id}/recomendaciones` | **Semana 4** — contenido relacionado por similitud |
 | `GET` | `/metricas` | Resumen básico del historial |
 | `GET` | `/analiticas` | **Semana 4** — panel completo del Dashboard |
+| `POST` | `/auth/registro` | **Semana 5** — crea una cuenta (login automático) |
+| `POST` | `/auth/login` | **Semana 5** — inicia sesión, devuelve un JWT |
+| `GET` | `/auth/me` | **Semana 5** — usuario dueño del token enviado |
+| `GET` | `/auth/usuarios` | **Semana 5** — catálogo de cuentas (solo rol `admin`) |
 
 ---
 
@@ -492,6 +497,56 @@ curl -i -X POST http://localhost:8000/contenido -H "Content-Type: application/js
 
 > **Nota para macOS / Linux:** usa comillas simples alrededor del JSON
 > (`-d '{"titulo":"..."}'`) en lugar de escapar las comillas dobles.
+
+### `POST /auth/registro` — crear una cuenta *(Semana 5)*
+
+El primer usuario que se registra en una instalación nueva de AthenIA recibe
+el rol `admin` automáticamente; el resto entra como `estudiante`.
+
+```bash
+curl -X POST http://localhost:8000/auth/registro \
+  -H "Content-Type: application/json" \
+  -d '{"email":"ferney@athenia.dev","password":"unaClaveSegura123","nombre":"Ferney"}'
+```
+
+Respuesta esperada (`201`):
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIs...",
+  "token_type": "bearer",
+  "usuario": {
+    "id": 1,
+    "email": "ferney@athenia.dev",
+    "nombre": "Ferney",
+    "rol": "admin",
+    "creado_en": "2026-08-21T03:14:00Z"
+  }
+}
+```
+
+### `POST /auth/login` — iniciar sesión *(Semana 5)*
+
+```bash
+curl -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"ferney@athenia.dev","password":"unaClaveSegura123"}'
+```
+
+`401` si el correo o la contraseña no coinciden.
+
+### `GET /auth/me` y `/auth/usuarios` — sesión y roles *(Semana 5)*
+
+El token se envía como header `Authorization: Bearer <token>` en cada
+petición protegida:
+
+```bash
+curl http://localhost:8000/auth/me -H "Authorization: Bearer $TOKEN"
+
+# Solo responde 200 si $TOKEN pertenece a un usuario con rol "admin".
+# Un rol "estudiante" recibe 403 aunque el token sea valido.
+curl http://localhost:8000/auth/usuarios -H "Authorization: Bearer $TOKEN"
+```
 
 ---
 
@@ -633,7 +688,9 @@ routing (`try_files`) para que recargar `/buscar` no dé 404.
 | `ATHENIA_MODELO_PATH` | `backend/models/classifier.joblib` | Artefacto entrenado |
 | `ATHENIA_SEED_DEMO` | `true` | Precarga contenido de ejemplo al arrancar |
 | `ATHENIA_MAX_HISTORIAL` | `500` | Tope de ítems en el historial |
-| `ATHENIA_DB_URL` | — | Reservado: Oracle Autonomous DB (Semana 3) |
+| `ATHENIA_DB_URL` | SQLite local (`backend/data/`) | Base de usuarios. Postgres en producción (ver `docker-compose.yml`) |
+| `ATHENIA_JWT_SECRET` | clave de desarrollo | Firma los JWT de sesión. **Cambiar en producción** |
+| `ATHENIA_JWT_EXPIRA_MIN` | `1440` (24 h) | Vigencia del token de sesión, en minutos |
 | `ATHENIA_OCI_BUCKET` | — | Reservado: Object Storage |
 
 ### Frontend
@@ -643,6 +700,40 @@ Copiar `frontend/.env.example` a `frontend/.env`:
 | Variable | Defecto | Descripción |
 |----------|---------|-------------|
 | `VITE_API_URL` | `/api` (proxy de Vite) | URL del backend en despliegue |
+
+---
+
+## 🔐 Autenticación y usuarios (Semana 5)
+
+AthenIA tiene login y registro reales — no una maqueta visual. Sigue el mismo
+patrón SOLID que el resto del backend: `domain/protocols.py` define el
+contrato `RepositorioUsuarios`, `repositories/usuarios_sql.py` lo implementa
+sobre SQLAlchemy, y ni las rutas ni `auth_service.py` conocen el motor de base
+de datos concreto.
+
+| Pieza | Detalle |
+|-------|---------|
+| Contraseñas | Hasheadas con `bcrypt` (vía `passlib`). Nunca se guardan ni se loggean en texto plano |
+| Sesión | JWT firmado (`HS256`), enviado como `Authorization: Bearer <token>`, vigente 24 h por defecto |
+| Roles | El **primer usuario registrado** en una instalación nueva recibe `admin` automáticamente; el resto entra como `estudiante` |
+| Base de datos | SQLite local sin configurar nada (`backend/data/`, ideal para desarrollo); Postgres en producción vía `ATHENIA_DB_URL` — ver el servicio `athenia-db` en `docker-compose.yml` |
+| Control de acceso | `GET /auth/usuarios` solo responde a `admin` (403 para `estudiante`), demostrando RBAC sobre el mismo mecanismo que protegería cualquier endpoint futuro |
+
+**Antes de desplegar en OCI**, cambiar dos valores en `docker-compose.yml` /
+el `.env` real (vienen con un placeholder a propósito, para que
+`docker compose up` funcione de entrada en la demo):
+
+```bash
+# Genera un secreto real para producción:
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+- `ATHENIA_JWT_SECRET` — con el placeholder, cualquiera que lea este repo
+  público puede firmar tokens válidos.
+- La contraseña de `athenia-db` (Postgres) en `docker-compose.yml`.
+
+Ver ejemplos con `curl` en la sección [Ejemplos con curl](#-ejemplos-con-curl)
+y las pruebas en `backend/tests/test_auth.py`.
 
 ---
 
@@ -740,8 +831,8 @@ descubra en producción:
 
 | Tema | Estado actual | Siguiente paso |
 |------|---------------|----------------|
-| **Persistencia** | El historial vive en memoria y se pierde al reiniciar el contenedor | Implementar `RepositorioOracle` contra Autonomous Database cumpliendo el `Protocol` existente |
-| **Autenticación** | No hay login; "Cerrar sesión" solo limpia datos locales del navegador | Añadir OAuth/JWT y proteger los endpoints de escritura |
+| **Persistencia del historial** | El historial de análisis vive en memoria y se pierde al reiniciar el contenedor | Implementar `RepositorioOracle` contra Autonomous Database cumpliendo el `Protocol` existente |
+| ~~**Autenticación**~~ | ✅ Resuelto (Semana 5): login/registro reales con JWT, roles (`admin`/`estudiante`) y base de usuarios en Postgres | Conectar el frontend a un flujo de recuperación de contraseña |
 | **CORS** | Por defecto `*`; en `docker-compose.yml` ya va restringido | Enumerar dominios reales en la variable `ATHENIA_CORS_ORIGINS` |
 | **Notificaciones** | Botón deshabilitado en la UI | Fuera del alcance del MVP |
 

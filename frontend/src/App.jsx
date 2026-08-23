@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BrowserRouter, Routes, Route, Link, Outlet } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link, Navigate, Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
 import Header from './components/Header'
 import Login from './pages/Login'
@@ -11,6 +11,21 @@ import Categorias from './pages/Categorias'
 import Recomendaciones from './pages/Recomendaciones'
 import AsistenteIA from './pages/AsistenteIA'
 import Configuracion from './pages/Configuracion'
+import { AuthProvider, useAuth } from './hooks/useAuth'
+
+/**
+ * Protege el shell principal: sin sesion, redirige a `/login` y recuerda a
+ * donde iba (`state.desde`) para poder volver ahi despues de iniciar sesion.
+ */
+function RutaProtegida({ children }) {
+  const { autenticado } = useAuth()
+  const ubicacion = useLocation()
+
+  if (!autenticado) {
+    return <Navigate to="/login" replace state={{ desde: ubicacion }} />
+  }
+  return children
+}
 
 /** Pantalla 404. */
 function NoEncontrado() {
@@ -54,23 +69,31 @@ function LayoutPrincipal() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Fuera del shell: pantalla completa, sin sidebar ni header. */}
-        <Route path="/login" element={<Login />} />
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Fuera del shell: pantalla completa, sin sidebar ni header. */}
+          <Route path="/login" element={<Login />} />
 
-        <Route element={<LayoutPrincipal />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/mis-cursos" element={<MisCursos />} />
-          <Route path="/agregar" element={<AgregarContenido />} />
-          <Route path="/buscar" element={<BuscarContenidos />} />
-          <Route path="/categorias" element={<Categorias />} />
-          <Route path="/recomendaciones" element={<Recomendaciones />} />
-          <Route path="/asistente" element={<AsistenteIA />} />
-          <Route path="/configuracion" element={<Configuracion />} />
-          <Route path="*" element={<NoEncontrado />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+          <Route
+            element={
+              <RutaProtegida>
+                <LayoutPrincipal />
+              </RutaProtegida>
+            }
+          >
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/mis-cursos" element={<MisCursos />} />
+            <Route path="/agregar" element={<AgregarContenido />} />
+            <Route path="/buscar" element={<BuscarContenidos />} />
+            <Route path="/categorias" element={<Categorias />} />
+            <Route path="/recomendaciones" element={<Recomendaciones />} />
+            <Route path="/asistente" element={<AsistenteIA />} />
+            <Route path="/configuracion" element={<Configuracion />} />
+            <Route path="*" element={<NoEncontrado />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   )
 }

@@ -19,8 +19,10 @@ Variables soportadas
 | `ATHENIA_MODELO_PATH`    | autodeteccion                 | Ruta explicita al `.pkl` / `.joblib`.         |
 | `ATHENIA_SEED_DEMO`      | `true`                        | Precarga contenido de ejemplo al arrancar.    |
 | `ATHENIA_MAX_HISTORIAL`  | `500`                         | Tope de items en el historial en memoria.     |
-| `ATHENIA_DB_URL`         | vacio                         | Reservado: Oracle Autonomous DB (Semana 3).   |
+| `ATHENIA_DB_URL`         | sqlite local (`backend/data`) | Base de usuarios. Postgres en produccion.     |
 | `ATHENIA_OCI_BUCKET`     | vacio                         | Reservado: bucket de Object Storage.          |
+| `ATHENIA_JWT_SECRET`     | clave de desarrollo           | Firma de los JWT de sesion. Cambiar en prod.  |
+| `ATHENIA_JWT_EXPIRA_MIN` | `1440` (24 h)                 | Vigencia del token de sesion, en minutos.     |
 """
 
 from __future__ import annotations
@@ -90,8 +92,31 @@ class Settings:
         self.SEED_DEMO: bool = _bool_env("ATHENIA_SEED_DEMO", True)
         self.MAX_HISTORIAL: int = _int_env("ATHENIA_MAX_HISTORIAL", 500)
 
-        # --- Reservado para la Semana 3 (integracion Oracle / OCI) ----------
-        self.DB_URL: str = os.getenv("ATHENIA_DB_URL", "")
+        # --- Base de usuarios (Semana 5) -------------------------------------
+        # Sin definir, cae a un archivo SQLite dentro de `backend/data/`: el
+        # equipo clona el repo y el login funciona sin levantar Postgres. En
+        # OCI, `docker-compose.yml` define `ATHENIA_DB_URL` apuntando al
+        # servicio `athenia-db` (Postgres). Mismo codigo, distinto dialecto
+        # segun la URL — ver `repositories/usuarios_sql.py`.
+        db_url_env = os.getenv("ATHENIA_DB_URL", "").strip()
+        if db_url_env:
+            self.DB_URL: str = db_url_env
+        else:
+            datos_dir = BASE_DIR / "data"
+            datos_dir.mkdir(parents=True, exist_ok=True)
+            self.DB_URL = f"sqlite:///{datos_dir / 'athenia_usuarios.db'}"
+
+        # --- Sesiones (JWT) ---------------------------------------------------
+        # El valor por defecto es SOLO para desarrollo local: firmar tokens con
+        # una clave conocida publicamente (este mismo repo) es inseguro en
+        # produccion. `es_produccion` + `ATHENIA_JWT_SECRET` sin definir se
+        # reporta en `GET /salud` -> ver `services` / `routers/salud.py`.
+        self.JWT_SECRET: str = os.getenv(
+            "ATHENIA_JWT_SECRET", "athenia-dev-secret-no-usar-en-produccion"
+        )
+        self.JWT_EXPIRA_MINUTOS: int = _int_env("ATHENIA_JWT_EXPIRA_MIN", 60 * 24)
+
+        # --- Reservado (Object Storage / OCI) --------------------------------
         self.OCI_BUCKET: str = os.getenv("ATHENIA_OCI_BUCKET", "")
         self.OCI_NAMESPACE: str = os.getenv("ATHENIA_OCI_NAMESPACE", "")
         self.OCI_REGION: str = os.getenv("ATHENIA_OCI_REGION", "")
@@ -104,6 +129,11 @@ class Settings:
     def docs_habilitados(self) -> bool:
         """Swagger queda expuesto siempre en el MVP: el jurado debe poder probarlo."""
         return True
+
+    @property
+    def jwt_secreto_por_defecto(self) -> bool:
+        """True si nadie configuro `ATHENIA_JWT_SECRET` (inseguro fuera de desarrollo)."""
+        return self.JWT_SECRET == "athenia-dev-secret-no-usar-en-produccion"
 
     def __repr__(self) -> str:  # pragma: no cover - solo para debugging
         modelo = self.MODELO_PATH.name if self.MODELO_PATH else "auto"

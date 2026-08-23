@@ -15,6 +15,7 @@ import {
 import Logo from './Logo'
 import ConfirmDialog from './ConfirmDialog'
 import { limpiarHistorialBusquedas } from '../hooks/useHistorialBusquedas'
+import { useAuth } from '../hooks/useAuth'
 
 /**
  * Navegacion principal, en el orden del diseno de referencia.
@@ -43,23 +44,23 @@ const NAVEGACION = [
  */
 export default function Sidebar({ abierto = false, onCerrar = () => {} }) {
   const navegar = useNavigate()
+  const { cerrarSesion: invalidarSesion } = useAuth()
   const [confirmandoSalida, setConfirmandoSalida] = useState(false)
 
   /**
    * Cierre de sesion.
    *
-   * Todavia no hay autenticacion (llega despues del MVP), asi que no hay token
-   * que invalidar. Lo que si existe son datos locales del usuario: el historial
-   * de busquedas en `localStorage`. Se borran de verdad y se vuelve al inicio.
-   *
-   * Cuando exista login, este mismo handler sumara la invalidacion del token y
-   * la redireccion a `/login`, sin cambiar nada del resto del Sidebar.
+   * Invalida el token JWT (se borra de `localStorage` y del estado de React,
+   * ver `hooks/useAuth.js`) y borra el historial de busquedas local — ese
+   * dato nunca viajo al backend, asi que no basta con cerrar sesion del lado
+   * del servidor para limpiarlo.
    */
   const cerrarSesion = () => {
+    invalidarSesion()
     limpiarHistorialBusquedas()
     setConfirmandoSalida(false)
     onCerrar() // repliega el drawer en movil
-    navegar('/')
+    navegar('/login')
   }
 
   const claseEnlace = ({ isActive }) =>
