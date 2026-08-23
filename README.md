@@ -204,6 +204,53 @@ macOS / Linux:
 .venv/bin/python -m pip install -r backend/requirements.txt
 ```
 
+### 3.1. Precargar el modelo de embeddings (una sola vez)
+
+`GET /cursos` y `GET /cursos/buscar` (el catálogo semántico de +5.000 cursos)
+necesitan el modelo `paraphrase-multilingual-MiniLM-L12-v2` para poder abrir
+el índice de Chroma, incluso solo para listar sin buscar nada. En OCI ese
+modelo viaja horneado en la imagen de Docker; en local nadie lo precarga por
+vos, así que la primera vez se descarga (~470 MB) desde Hugging Face.
+
+Si este paso se salta, el síntoma es exactamente "0 cursos en el catálogo" en
+la vista Buscar, aunque el índice tenga los datos completos — un fallo
+silencioso, documentado en `backend/app/busqueda/almacen.py`.
+
+Windows:
+
+```bash
+.venv\Scripts\python backend\scripts\precargar_modelo.py
+```
+
+macOS / Linux:
+
+```bash
+.venv/bin/python backend/scripts/precargar_modelo.py
+```
+
+> Sin salida a internet: copiá la carpeta que el build de Docker deja en
+> `/opt/modelos` (ver `backend/Dockerfile`) a tu cache local y fijá
+> `SENTENCE_TRANSFORMERS_HOME` a esa ruta en tu `.env`.
+
+Para confirmar en cualquier momento si el catálogo y el recomendador por
+matriz están sanos (sin tener que leer los logs del proceso), con el backend
+corriendo entrá a **`GET /cursos/estado`** — devuelve `disponible`,
+`total_indexado` y, si algo falló, el motivo exacto en texto plano.
+
+### 3.2. Si tu copia usa el modelo relacional (`Data/matriz_similitud_cursos.pkl`)
+
+Ese archivo pesa ~190 MB y viaja por **Git LFS** (`.gitattributes`). Si tu
+clon no tiene `git-lfs` instalado o nunca corriste `git lfs pull`, el archivo
+en disco es apenas el *puntero* de texto de LFS, no la matriz real — y
+`/cursos/{id}/relacionados-matriz` responde `recomendaciones: []` siempre.
+`GET /cursos/estado` distingue este caso explícitamente en
+`recomendador_matriz.motivo`.
+
+```bash
+git lfs install
+git lfs pull
+```
+
 ### 4. Instalar las dependencias de Node
 
 ```bash
