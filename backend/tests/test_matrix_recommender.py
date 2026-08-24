@@ -163,9 +163,19 @@ def recomendador_con_datos(tmp_path, monkeypatch):
         json.dumps(
             {
                 "0": {"titulo": "Curso A", "categoria": "IA", "proveedor": "Coursera", "tags": ["python"]},
-                "1": {"titulo": "Curso B", "categoria": "IA", "proveedor": "Coursera", "tags": []},
+                "1": {
+                    "titulo": "Curso B",
+                    "categoria": "IA",
+                    "proveedor": "Coursera",
+                    "tags": [],
+                    "url": "https://ejemplo.com/curso-b",
+                    "descripcion": "Descripcion de prueba del curso B.",
+                },
                 "2": {"titulo": "Curso C", "categoria": "Cloud", "proveedor": "Udemy", "tags": []},
                 # A proposito sin "3": ejercita el respaldo `mapeo_cursos.get(idx, {})`.
+                # "0" y "2" a proposito sin url/descripcion: ejercitan el
+                # mapeo_cursos.json "viejo" (generado antes de correr
+                # `scripts/enriquecer_mapeo_cursos.py`).
             }
         ),
         encoding="utf-8",
@@ -186,6 +196,24 @@ class TestRecomendar:
         assert resultados[0]["categoria"] == "IA"
         assert resultados[0]["tags"] == []
 
+    def test_incluye_url_y_descripcion_cuando_el_mapeo_las_trae(self, recomendador_con_datos):
+        resultados = recomendador_con_datos.recomendar(curso_idx=0, top_n=3)
+        curso_b = next(r for r in resultados if r["id"] == 1)
+
+        assert curso_b["url"] == "https://ejemplo.com/curso-b"
+        assert curso_b["descripcion"] == "Descripcion de prueba del curso B."
+
+    def test_url_y_descripcion_por_defecto_vacias_si_el_mapeo_no_las_trae(self, recomendador_con_datos):
+        # "Curso C" (id 2) no tiene url/descripcion en el mapeo de prueba —
+        # simula un mapeo_cursos.json de antes de correr
+        # `scripts/enriquecer_mapeo_cursos.py`. No debe reventar, debe
+        # quedar en "".
+        resultados = recomendador_con_datos.recomendar(curso_idx=0, top_n=3)
+        curso_c = next(r for r in resultados if r["id"] == 2)
+
+        assert curso_c["url"] == ""
+        assert curso_c["descripcion"] == ""
+
     def test_nunca_recomienda_el_propio_curso(self, recomendador_con_datos):
         resultados = recomendador_con_datos.recomendar(curso_idx=0, top_n=10)
         assert 0 not in [r["id"] for r in resultados]
@@ -202,6 +230,8 @@ class TestRecomendar:
         assert resultados[0]["titulo"] == "Curso 3"
         assert resultados[0]["categoria"] == "Desarrollo y Tecnología"
         assert resultados[0]["proveedor"] == "Plataforma"
+        assert resultados[0]["url"] == ""
+        assert resultados[0]["descripcion"] == ""
 
     def test_curso_idx_fuera_de_rango_devuelve_vacio(self, recomendador_con_datos):
         assert recomendador_con_datos.recomendar(curso_idx=999, top_n=3) == []

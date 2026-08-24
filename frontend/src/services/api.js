@@ -296,7 +296,12 @@ export async function obtenerRecomendaciones(id, { limite = 5 } = {}, signal) {
             probabilidad: valorDecimal,
             puntaje: valorDecimal,
             palabras_compartidas: item.tags || [item.categoria],
-            informacion_adicional: item.tags || []
+            informacion_adicional: item.tags || [],
+            // Agregados por `scripts/enriquecer_mapeo_cursos.py` en el backend
+            // (cruce por titulo contra `Data/cursos_dataset.json`). Un mapeo
+            // viejo puede no traerlos todavia, de ahi el default a ''.
+            descripcion: item.descripcion || '',
+            url: item.url || ''
           }
         })
       }
@@ -339,6 +344,38 @@ export function verificarSalud() {
 export async function obtenerCategorias() {
   const data = await peticion(() => api.get('/categorias'))
   return data.categorias
+}
+
+// ---------------------------------------------------------------------------
+// Asistente IA
+// ---------------------------------------------------------------------------
+
+/**
+ * POST /asistente/mensaje - conversa con el Asistente sobre el catalogo.
+ *
+ * `cursos_relacionados` viene siempre de la busqueda semantica del backend
+ * (nunca del texto que redacta el modelo), asi que se reutiliza `mapearCurso`
+ * para que las tarjetas de curso sean identicas a las del resto de la app.
+ *
+ * @param {string} mensaje
+ * @param {{rol:string, texto:string}[]} historial
+ */
+export async function enviarMensajeAsistente(mensaje, historial = []) {
+  const data = await peticion(() => api.post('/asistente/mensaje', { mensaje, historial }))
+  return {
+    respuesta: data.respuesta ?? '',
+    cursosRelacionados: (data.cursos_relacionados ?? []).map(mapearCurso),
+    motor: data.motor ?? 'desconocido',
+    disponible: Boolean(data.disponible),
+  }
+}
+
+/**
+ * GET /asistente/estado - diagnostico (permite distinguir "sin API key" de
+ * "catalogo caido" antes de dejar escribir al usuario).
+ */
+export function obtenerEstadoAsistente(signal) {
+  return peticion(() => api.get('/asistente/estado', { signal }))
 }
 
 export default api

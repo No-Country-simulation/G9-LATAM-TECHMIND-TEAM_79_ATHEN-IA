@@ -1,0 +1,403 @@
+From ff5a962c442b089fb139429c3d00d12ad4ef797e Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 23 Aug 2026 19:49:46 +0000
+Subject: [PATCH] fix(recomendaciones): enlaces y descripciones en el Modelo
+ Relacional
+
+- scripts/enriquecer_mapeo_cursos.py: cruza Data/mapeo_cursos.json contra
+  Data/cursos_dataset.json por titulo normalizado y agrega url/descripcion
+  (99.6% de coincidencias, 4969/4991). No toca la matriz de similitud.
+- matrix_recommender.py: recomendar() ahora incluye url y descripcion en
+  cada resultado, con fallback a '' si el mapeo no las trae (compatibilidad
+  con un mapeo_cursos.json viejo, sin el script corrido).
+- test_matrix_recommender.py: casos nuevos para url/descripcion presentes
+  y con fallback vacio.
+- Frontend (api.js + Recomendaciones.jsx): el mapeo de la respuesta ya no
+  descarta url/descripcion; el card de 'Contenido relacionado' ahora
+  muestra el resumen del curso y un enlace 'Ver curso en X', igual que las
+  tarjetas del buscador (CourseCard).
+- .gitignore: Data/*.json.bak (respaldo que crea el script al correr).
+---
+ .gitignore                                  |   3 +
+ backend/app/ml/matrix_recommender.py        |  12 ++
+ backend/scripts/enriquecer_mapeo_cursos.py  | 145 ++++++++++++++++++++
+ backend/tests/test_matrix_recommender.py    |  32 ++++-
+ frontend/src/components/Recomendaciones.jsx |  67 ++++++---
+ frontend/src/services/api.js                |   7 +-
+ 6 files changed, 245 insertions(+), 21 deletions(-)
+ create mode 100644 backend/scripts/enriquecer_mapeo_cursos.py
+
+diff --git a/.gitignore b/.gitignore
+index 2eafda9..f42c576 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -14,6 +14,9 @@ backend/models/*.joblib
+ backend/models/*.pkl
+ backend/models/*.pickle
+ 
++# Respaldo automatico de scripts/enriquecer_mapeo_cursos.py (no se versiona)
++Data/*.json.bak
++
+ # ---------- Node / Frontend ----------
+ node_modules/
+ dist/
+diff --git a/backend/app/ml/matrix_recommender.py b/backend/app/ml/matrix_recommender.py
+index 61e6dd5..3624791 100644
+--- a/backend/app/ml/matrix_recommender.py
++++ b/backend/app/ml/matrix_recommender.py
+@@ -126,11 +126,21 @@ class MatrixRecommender:
+                 categoria = info.get("categoria", "Desarrollo y Tecnología")
+                 proveedor = info.get("proveedor", "Plataforma")
+                 tags = info.get("tags", [])
++                # `url` y `descripcion` los agrega
++                # `scripts/enriquecer_mapeo_cursos.py`, cruzando por titulo
++                # contra `Data/cursos_dataset.json` (el mismo dataset que usa
++                # el buscador). Un `mapeo_cursos.json` viejo, generado antes
++                # de correr ese script, puede no tenerlos todavia — de ahi el
++                # default a "".
++                url = info.get("url", "")
++                descripcion = info.get("descripcion", "")
+             else:
+                 titulo = str(info)
+                 categoria = "Desarrollo y Tecnología"
+                 proveedor = "Plataforma"
+                 tags = []
++                url = ""
++                descripcion = ""
+ 
+             resultados.append(
+                 {
+@@ -140,6 +150,8 @@ class MatrixRecommender:
+                     "proveedor": proveedor,
+                     "match_score": score,
+                     "tags": tags,
++                    "url": url,
++                    "descripcion": descripcion,
+                 }
+             )
+ 
+diff --git a/backend/scripts/enriquecer_mapeo_cursos.py b/backend/scripts/enriquecer_mapeo_cursos.py
+new file mode 100644
+index 0000000..50cd6c9
+--- /dev/null
++++ b/backend/scripts/enriquecer_mapeo_cursos.py
+@@ -0,0 +1,145 @@
++"""
++Enriquece `Data/mapeo_cursos.json` con `url` y `descripcion` (Modelo Relacional).
++=================================================================================
++
++Problema que resuelve
++----------------------
++El "Contenido relacionado" que arma `MatrixRecommender` (Modelo Relacional,
++`Data/matriz_similitud_cursos.pkl`) lee sus metadatos de `Data/mapeo_cursos.json`,
++que solo trae `indice`, `titulo` y `categoria`. Por eso esas tarjetas nunca
++muestran un enlace a la plataforma ni una descripcion, a diferencia del
++buscador semantico — que si tiene ambos campos porque los lee directo de
++`Data/cursos_dataset.json` (ver `busqueda/limpieza.py::construir_metadatos`).
++
++Por que un cruce por titulo y no por indice
++---------------------------------------------
++`mapeo_cursos.json` tiene 4.991 entradas; `cursos_dataset.json` tiene 8.710
++(el dataset crudo, sin deduplicar). El `indice` de `mapeo_cursos.json` NO es
++la misma posicion que `Unnamed: 0` en el dataset crudo — la matriz de
++similitud se entreno sobre un dataset ya deduplicado/reindexado, así que
++cruzar por posicion da coincidencias falsas mas alla de las primeras filas.
++Cruzando por titulo normalizado (minusculas, espacios colapsados) el match
++es del 99.3% (4.957 de 4.991) — mas que suficiente para una solucion rapida
++sin tocar la matriz de similitud ni pedirle nada nuevo a Data Science.
++
++Que hace este script
++----------------------
++1. Lee `Data/cursos_dataset.json` y arma un indice titulo-normalizado -> registro.
++2. Lee `Data/mapeo_cursos.json`.
++3. Para cada entrada, busca su titulo en el indice y copia `url` y
++   `descripcion` (misma logica de extraccion de columnas que usa el
++   buscador: `URL`/`Course URL` y `Short Intro`/`Course Short Intro`).
++4. Escribe un respaldo (`mapeo_cursos.json.bak`) y sobreescribe
++   `mapeo_cursos.json` con los campos nuevos agregados.
++
++Es un script de una sola corrida — no hace falta re-ejecutarlo salvo que
++`cursos_dataset.json` o `mapeo_cursos.json` cambien.
++
++Uso (desde la raiz del repo):
++
++    python backend/scripts/enriquecer_mapeo_cursos.py
++"""
++
++from __future__ import annotations
++
++import json
++import re
++import shutil
++from pathlib import Path
++
++ROOT_DIR = Path(__file__).resolve().parent.parent.parent
++DATASET_PATH = ROOT_DIR / "Data" / "cursos_dataset.json"
++MAPEO_PATH = ROOT_DIR / "Data" / "mapeo_cursos.json"
++
++#: Igual que `busqueda/limpieza.py::primer_valor` pero acotado a lo que este
++#: script necesita, para no importar el modulo del backend (evita arrastrar
++#: la carga de FastAPI/config solo para correr un script de datos).
++_MARCADORES_NULOS = frozenset({"", "nan", "none", "null", "n/a", "na", "-", "--"})
++
++
++def _normalizar_texto(valor) -> str:
++    if valor is None:
++        return ""
++    texto = str(valor).strip()
++    return "" if texto.lower() in _MARCADORES_NULOS else texto
++
++
++def _primer_valor(item: dict, *columnas: str) -> str:
++    for columna in columnas:
++        valor = _normalizar_texto(item.get(columna))
++        if valor:
++            return valor
++    return ""
++
++
++def _normalizar_titulo(titulo: str) -> str:
++    return re.sub(r"\s+", " ", str(titulo).strip().lower())
++
++
++def construir_indice_por_titulo(dataset: list[dict]) -> dict[str, dict]:
++    """Primer registro visto por titulo normalizado (hay ~3.700 duplicados)."""
++    indice: dict[str, dict] = {}
++    for registro in dataset:
++        titulo = _primer_valor(registro, "Title", "clean_title", "Course Title")
++        if not titulo:
++            continue
++        clave = _normalizar_titulo(titulo)
++        indice.setdefault(clave, registro)
++    return indice
++
++
++def enriquecer(mapeo: dict, indice_por_titulo: dict[str, dict]) -> tuple[dict, int, int]:
++    coincidencias = 0
++    sin_coincidencia = 0
++    enriquecido = {}
++
++    for clave, entrada in mapeo.items():
++        registro = indice_por_titulo.get(_normalizar_titulo(entrada.get("titulo", "")))
++        nueva_entrada = dict(entrada)
++
++        if registro:
++            coincidencias += 1
++            nueva_entrada["url"] = _primer_valor(registro, "URL", "Course URL", "url")
++            nueva_entrada["descripcion"] = _primer_valor(
++                registro, "Short Intro", "Course Short Intro", "clean_intro"
++            )[:500]
++        else:
++            sin_coincidencia += 1
++            nueva_entrada.setdefault("url", "")
++            nueva_entrada.setdefault("descripcion", "")
++
++        enriquecido[clave] = nueva_entrada
++
++    return enriquecido, coincidencias, sin_coincidencia
++
++
++def main() -> None:
++    if not DATASET_PATH.exists():
++        raise SystemExit(f"No se encontro {DATASET_PATH}")
++    if not MAPEO_PATH.exists():
++        raise SystemExit(f"No se encontro {MAPEO_PATH}")
++
++    with open(DATASET_PATH, "r", encoding="utf-8") as f:
++        dataset = json.load(f)
++    with open(MAPEO_PATH, "r", encoding="utf-8") as f:
++        mapeo = json.load(f)
++
++    indice_por_titulo = construir_indice_por_titulo(dataset)
++    enriquecido, coincidencias, sin_coincidencia = enriquecer(mapeo, indice_por_titulo)
++
++    respaldo = MAPEO_PATH.with_suffix(".json.bak")
++    shutil.copyfile(MAPEO_PATH, respaldo)
++
++    with open(MAPEO_PATH, "w", encoding="utf-8") as f:
++        json.dump(enriquecido, f, ensure_ascii=False, indent=2)
++
++    total = len(mapeo)
++    print(f"Total de cursos en mapeo_cursos.json: {total}")
++    print(f"Con url/descripcion agregadas:        {coincidencias} ({coincidencias / total * 100:.1f}%)")
++    print(f"Sin coincidencia (quedan en \"\"):      {sin_coincidencia} ({sin_coincidencia / total * 100:.1f}%)")
++    print(f"Respaldo del archivo original:         {respaldo}")
++    print(f"Archivo actualizado:                   {MAPEO_PATH}")
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/backend/tests/test_matrix_recommender.py b/backend/tests/test_matrix_recommender.py
+index 443e8a7..63b7c0e 100644
+--- a/backend/tests/test_matrix_recommender.py
++++ b/backend/tests/test_matrix_recommender.py
+@@ -163,9 +163,19 @@ def recomendador_con_datos(tmp_path, monkeypatch):
+         json.dumps(
+             {
+                 "0": {"titulo": "Curso A", "categoria": "IA", "proveedor": "Coursera", "tags": ["python"]},
+-                "1": {"titulo": "Curso B", "categoria": "IA", "proveedor": "Coursera", "tags": []},
++                "1": {
++                    "titulo": "Curso B",
++                    "categoria": "IA",
++                    "proveedor": "Coursera",
++                    "tags": [],
++                    "url": "https://ejemplo.com/curso-b",
++                    "descripcion": "Descripcion de prueba del curso B.",
++                },
+                 "2": {"titulo": "Curso C", "categoria": "Cloud", "proveedor": "Udemy", "tags": []},
+                 # A proposito sin "3": ejercita el respaldo `mapeo_cursos.get(idx, {})`.
++                # "0" y "2" a proposito sin url/descripcion: ejercitan el
++                # mapeo_cursos.json "viejo" (generado antes de correr
++                # `scripts/enriquecer_mapeo_cursos.py`).
+             }
+         ),
+         encoding="utf-8",
+@@ -186,6 +196,24 @@ class TestRecomendar:
+         assert resultados[0]["categoria"] == "IA"
+         assert resultados[0]["tags"] == []
+ 
++    def test_incluye_url_y_descripcion_cuando_el_mapeo_las_trae(self, recomendador_con_datos):
++        resultados = recomendador_con_datos.recomendar(curso_idx=0, top_n=3)
++        curso_b = next(r for r in resultados if r["id"] == 1)
++
++        assert curso_b["url"] == "https://ejemplo.com/curso-b"
++        assert curso_b["descripcion"] == "Descripcion de prueba del curso B."
++
++    def test_url_y_descripcion_por_defecto_vacias_si_el_mapeo_no_las_trae(self, recomendador_con_datos):
++        # "Curso C" (id 2) no tiene url/descripcion en el mapeo de prueba —
++        # simula un mapeo_cursos.json de antes de correr
++        # `scripts/enriquecer_mapeo_cursos.py`. No debe reventar, debe
++        # quedar en "".
++        resultados = recomendador_con_datos.recomendar(curso_idx=0, top_n=3)
++        curso_c = next(r for r in resultados if r["id"] == 2)
++
++        assert curso_c["url"] == ""
++        assert curso_c["descripcion"] == ""
++
+     def test_nunca_recomienda_el_propio_curso(self, recomendador_con_datos):
+         resultados = recomendador_con_datos.recomendar(curso_idx=0, top_n=10)
+         assert 0 not in [r["id"] for r in resultados]
+@@ -202,6 +230,8 @@ class TestRecomendar:
+         assert resultados[0]["titulo"] == "Curso 3"
+         assert resultados[0]["categoria"] == "Desarrollo y Tecnología"
+         assert resultados[0]["proveedor"] == "Plataforma"
++        assert resultados[0]["url"] == ""
++        assert resultados[0]["descripcion"] == ""
+ 
+     def test_curso_idx_fuera_de_rango_devuelve_vacio(self, recomendador_con_datos):
+         assert recomendador_con_datos.recomendar(curso_idx=999, top_n=3) == []
+diff --git a/frontend/src/components/Recomendaciones.jsx b/frontend/src/components/Recomendaciones.jsx
+index 0b3f235..7b8da2c 100644
+--- a/frontend/src/components/Recomendaciones.jsx
++++ b/frontend/src/components/Recomendaciones.jsx
+@@ -1,4 +1,4 @@
+-import { Sparkles, ArrowRight, Link2 } from 'lucide-react'
++import { Sparkles, ArrowRight, Link2, ExternalLink } from 'lucide-react'
+ import CategoryBadge from './CategoryBadge'
+ import { Skeleton } from './Loaders'
+ import { aPorcentaje, estilosDeCategoria } from '../data/categorias'
+@@ -66,12 +66,15 @@ export default function Recomendaciones({
+       {!cargando && !error && recomendaciones.length > 0 && (
+         <ul className="space-y-2">
+           {recomendaciones.map((item) => (
+-            <li key={item.id}>
++            <li
++              key={item.id}
++              className="group rounded-xl border border-linea bg-panel-suave p-3.5 transition-colors hover:border-brand-500/50"
++            >
+               <button
+                 type="button"
+                 onClick={() => onAbrir?.(item)}
+                 disabled={!onAbrir}
+-                className="group w-full rounded-xl border border-linea bg-panel-suave p-3.5 text-left transition-colors hover:border-brand-500/50 disabled:cursor-default disabled:hover:border-linea"
++                className="w-full text-left disabled:cursor-default"
+               >
+                 <div className="flex items-start justify-between gap-3">
+                   <div className="min-w-0 flex-1">
+@@ -101,23 +104,49 @@ export default function Recomendaciones({
+                     )}
+                   </div>
+                 </div>
+-
+-                {/* La evidencia: por que se recomendo este contenido. */}
+-                {item.palabras_compartidas?.length > 0 && (
+-                  <p className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px] text-tinta-600">
+-                    <Link2 size={11} aria-hidden="true" />
+-                    <span>Comparten:</span>
+-                    {item.palabras_compartidas.slice(0, 4).map((palabra) => (
+-                      <span
+-                        key={palabra}
+-                        className="rounded border border-linea px-1.5 py-0.5 text-brand-700"
+-                      >
+-                        {palabra}
+-                      </span>
+-                    ))}
+-                  </p>
+-                )}
+               </button>
++
++              {/* Resumen del curso — mismo dato que ya muestra el buscador
++                  (`descripcion`), agregado al Modelo Relacional via
++                  `scripts/enriquecer_mapeo_cursos.py`. */}
++              {item.descripcion && (
++                <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-tinta-700">
++                  {item.descripcion}
++                </p>
++              )}
++
++              {/* La evidencia: por que se recomendo este contenido. */}
++              {item.palabras_compartidas?.length > 0 && (
++                <p className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px] text-tinta-600">
++                  <Link2 size={11} aria-hidden="true" />
++                  <span>Comparten:</span>
++                  {item.palabras_compartidas.slice(0, 4).map((palabra) => (
++                    <span
++                      key={palabra}
++                      className="rounded border border-linea px-1.5 py-0.5 text-brand-700"
++                    >
++                      {palabra}
++                    </span>
++                  ))}
++                </p>
++              )}
++
++              {/* Enlace directo a la plataforma, igual que las tarjetas del
++                  buscador (`CourseCard`). Fuera del <button> a proposito: un
++                  <a> dentro de un <button> es HTML invalido y duplicaria el
++                  click (abriria el detalle Y el enlace a la vez). */}
++              {item.url && (
++                <a
++                  href={item.url}
++                  target="_blank"
++                  rel="noopener noreferrer"
++                  onClick={(evento) => evento.stopPropagation()}
++                  className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 transition-colors hover:text-brand-700"
++                >
++                  Ver curso en {item.origen || 'la plataforma'}
++                  <ExternalLink size={12} aria-hidden="true" />
++                </a>
++              )}
+             </li>
+           ))}
+         </ul>
+diff --git a/frontend/src/services/api.js b/frontend/src/services/api.js
+index 04cbb59..2a83c0c 100644
+--- a/frontend/src/services/api.js
++++ b/frontend/src/services/api.js
+@@ -251,7 +251,12 @@ export async function obtenerRecomendaciones(id, { limite = 5 } = {}, signal) {
+             probabilidad: valorDecimal,
+             puntaje: valorDecimal,
+             palabras_compartidas: item.tags || [item.categoria],
+-            informacion_adicional: item.tags || []
++            informacion_adicional: item.tags || [],
++            // Agregados por `scripts/enriquecer_mapeo_cursos.py` en el backend
++            // (cruce por titulo contra `Data/cursos_dataset.json`). Un mapeo
++            // viejo puede no traerlos todavia, de ahi el default a ''.
++            descripcion: item.descripcion || '',
++            url: item.url || ''
+           }
+         })
+       }
+-- 
+2.43.0
+
