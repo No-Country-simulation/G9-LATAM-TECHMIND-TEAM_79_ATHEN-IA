@@ -31,7 +31,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from . import services
 from .config import settings
 from .errors import configurar_manejo_de_errores
-from .routers import analiticas, auth, contenido, cursos, salud
+from .routers import analiticas, asistente, auth, contenido, cursos, salud
 from .schemas import ErrorResponse
 
 logging.basicConfig(
@@ -117,6 +117,7 @@ app.include_router(contenido.router)
 app.include_router(analiticas.router)
 app.include_router(cursos.router)
 app.include_router(auth.router)
+app.include_router(asistente.router)
 
 
 if __name__ == "__main__":  # pragma: no cover

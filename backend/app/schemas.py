@@ -699,6 +699,54 @@ class TokenOutput(BaseModel):
     usuario: UsuarioOutput
 
 
+# ---------------------------------------------------------------------------
+# Asistente conversacional
+# ---------------------------------------------------------------------------
+
+
+class TurnoConversacion(BaseModel):
+    """Un turno del historial de chat que el cliente reenvia en cada mensaje."""
+
+    rol: Literal["usuario", "asistente"]
+    texto: str = Field(..., max_length=4000)
+
+
+class MensajeAsistenteInput(BaseModel):
+    """Payload de entrada para `POST /asistente/mensaje`."""
+
+    mensaje: str = Field(..., max_length=1000)
+    historial: List[TurnoConversacion] = Field(default_factory=list)
+
+    @field_validator("mensaje")
+    @classmethod
+    def mensaje_no_vacio(cls, valor: str) -> str:
+        # No se rechaza aqui con un error 422: `AsistenteCursos.responder()`
+        # ya sabe degradar un mensaje vacio a una respuesta valida ("Escribe
+        # una pregunta..."), el mismo contrato de "nunca lanza" del resto del
+        # dominio. Solo se recorta espacio para no reenviarlo tal cual al LLM.
+        return valor.strip()
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [{"mensaje": "¿Que cursos hay de Python?", "historial": []}]
+        }
+    )
+
+
+class RespuestaAsistente(BaseModel):
+    """Respuesta de `POST /asistente/mensaje` y forma del dict de `AsistenteCursos.responder()`."""
+
+    respuesta: str = Field(..., description="Texto redactado por el Asistente.")
+    cursos_relacionados: List[CursoEncontrado] = Field(
+        default_factory=list,
+        description="Cursos reales citables, siempre desde la busqueda semantica (nunca del LLM).",
+    )
+    motor: str = Field(..., description="Identificador del motor de lenguaje ('openai').")
+    disponible: bool = Field(
+        ..., description="False si el modelo de lenguaje no esta configurado."
+    )
+
+
 # Resuelve las referencias adelantadas usadas en `MetricasOutput` y
 # `AnaliticasOutput` (ambos citan `ConteoPalabraClave` antes de su definicion).
 MetricasOutput.model_rebuild()

@@ -47,7 +47,7 @@ if (!existsSync(pythonVenv)) {
 
 const proceso = spawn(
   python,
-  ['-m', 'uvicorn', 'app.main:app', '--reload', '--port', '8000', '--host', '127.0.0.1'],
+  ['-m', 'uvicorn', 'app.main:app', '--reload', '--port', '8000', '--host', '127.0.0.1', '--env-file', '.env'],
   {
     cwd: join(RAIZ, 'backend'),
     stdio: 'inherit',

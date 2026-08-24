@@ -226,6 +226,46 @@ class AlmacenVectorial(Protocol):
 
 
 # ---------------------------------------------------------------------------
+# Asistente conversacional (RAG)
+# ---------------------------------------------------------------------------
+
+
+@runtime_checkable
+class ModeloLenguaje(Protocol):
+    """
+    Contrato de cualquier motor de generacion de lenguaje (LLM) para el
+    Asistente conversacional.
+
+    Se separa deliberadamente de `AlmacenVectorial`: uno recupera cursos
+    reales por afinidad semantica, el otro redacta texto a partir de ese
+    contexto. Mezclarlos acoplaria "buscar" con "generar" y complicaria
+    sustituir el proveedor de LLM (OpenAI hoy, otro manana) sin tocar la
+    logica de busqueda — ver `asistente/servicio.py`.
+    """
+
+    nombre: str
+    disponible: bool
+
+    def responder(
+        self,
+        mensaje: str,
+        contexto: List[dict],
+        historial: Optional[List[dict]] = None,
+    ) -> str:
+        """
+        Redacta una respuesta en lenguaje natural a `mensaje`, citando SOLO
+        los cursos presentes en `contexto` (resultado de una busqueda real,
+        nunca inventados por el modelo). `historial` es la conversacion
+        previa, en el mismo formato que `TurnoConversacion` (schemas.py).
+
+        Nunca debe lanzar: una API sin configurar, sin cuota o con un error
+        de red debe degradar a un texto explicativo, igual que
+        `Clasificador.clasificar` nunca lanza.
+        """
+        ...
+
+
+# ---------------------------------------------------------------------------
 # Persistencia
 # ---------------------------------------------------------------------------
 

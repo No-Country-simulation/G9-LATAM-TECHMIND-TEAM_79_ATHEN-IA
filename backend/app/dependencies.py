@@ -37,11 +37,14 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from . import auth_service, services
+from .asistente.motor_openai import ModeloLenguajeOpenAI
+from .asistente.servicio import AsistenteCursos
 from .busqueda.almacen import AlmacenChroma
 from .busqueda.servicio import BuscadorCursos
 from .config import settings
 from .domain.protocols import (
     Clasificador,
+    ModeloLenguaje,
     MotorRecomendaciones,
     RepositorioContenidos,
     RepositorioUsuarios,
@@ -75,6 +78,16 @@ _repositorio_usuarios = RepositorioUsuariosSQL(settings.DB_URL)
 # `ErrorResponse` (via `HTTPException` propia) antes que el 403 generico que
 # FastAPI arma cuando falta el header `Authorization`.
 _esquema_bearer = HTTPBearer(auto_error=False)
+
+# Instancia unica del modelo de lenguaje del Asistente. Sigue el mismo import
+# perezoso que `AlmacenChroma`/`sentence-transformers`: sin `openai` instalado
+# o sin `ATHENIA_OPENAI_API_KEY`, `disponible` queda en False y el Asistente
+# degrada a mostrar solo los cursos encontrados — ver `asistente/motor_openai.py`.
+_modelo_lenguaje = ModeloLenguajeOpenAI()
+
+# El Asistente combina el buscador de cursos ya existente con el modelo de
+# lenguaje de arriba (RAG) — ver `asistente/servicio.py`.
+_asistente = AsistenteCursos(_buscador_cursos, _modelo_lenguaje)
 
 
 def get_clasificador() -> Clasificador:
@@ -120,6 +133,29 @@ def get_buscador_cursos() -> BuscadorCursos:
     modelo de embeddings.
     """
     return _buscador_cursos
+
+
+def get_modelo_lenguaje() -> ModeloLenguaje:
+    """
+    Devuelve el motor de lenguaje del Asistente.
+
+    Punto unico de sustitucion si mas adelante se cambia de proveedor (o se
+    agrega uno alternativo): ninguna ruta ni `AsistenteCursos` importa
+    `openai` directamente, solo dependen del `Protocol` `ModeloLenguaje`.
+    """
+    return _modelo_lenguaje
+
+
+def get_asistente() -> AsistenteCursos:
+    """
+    Devuelve el Asistente conversacional.
+
+    En pruebas se sustituye con
+    `app.dependency_overrides[get_asistente] = lambda: doble`, igual que
+    `get_buscador_cursos`, para ejercitar la ruta sin la base vectorial ni
+    gastar tokens de OpenAI.
+    """
+    return _asistente
 
 
 def get_repositorio_usuarios() -> RepositorioUsuarios:

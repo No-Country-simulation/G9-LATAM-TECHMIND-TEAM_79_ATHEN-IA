@@ -23,6 +23,9 @@ Variables soportadas
 | `ATHENIA_OCI_BUCKET`     | vacio                         | Reservado: bucket de Object Storage.          |
 | `ATHENIA_JWT_SECRET`     | clave de desarrollo           | Firma de los JWT de sesion. Cambiar en prod.  |
 | `ATHENIA_JWT_EXPIRA_MIN` | `1440` (24 h)                 | Vigencia del token de sesion, en minutos.     |
+| `ATHENIA_OPENAI_API_KEY` | vacio                         | Habilita el Asistente conversacional.         |
+| `ATHENIA_OPENAI_MODEL`   | `gpt-4o-mini`                 | Modelo de OpenAI usado por el Asistente.      |
+| `ATHENIA_OPENAI_MAX_TOKENS` | `500`                      | Tope de tokens de la respuesta del Asistente. |
 """
 
 from __future__ import annotations
@@ -121,6 +124,14 @@ class Settings:
         self.OCI_NAMESPACE: str = os.getenv("ATHENIA_OCI_NAMESPACE", "")
         self.OCI_REGION: str = os.getenv("ATHENIA_OCI_REGION", "")
 
+        # --- Asistente conversacional (OpenAI) -------------------------------
+        # Sin API key, `ModeloLenguajeOpenAI.disponible` queda en False y el
+        # Asistente responde solo con los cursos encontrados (sin redaccion),
+        # en vez de lanzar — ver `asistente/motor_openai.py`.
+        self.OPENAI_API_KEY: str = os.getenv("ATHENIA_OPENAI_API_KEY", "")
+        self.OPENAI_MODEL: str = os.getenv("ATHENIA_OPENAI_MODEL", "gpt-4o-mini")
+        self.OPENAI_MAX_TOKENS: int = _int_env("ATHENIA_OPENAI_MAX_TOKENS", 500)
+        self.OPENAI_BASE_URL: str = os.getenv("ATHENIA_OPENAI_BASE_URL", "")
     @property
     def es_produccion(self) -> bool:
         return self.ENV == "production"

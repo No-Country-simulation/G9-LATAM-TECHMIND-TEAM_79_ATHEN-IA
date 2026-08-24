@@ -20,10 +20,10 @@ import { useAuth } from '../hooks/useAuth'
 /**
  * Navegacion principal, en el orden del diseno de referencia.
  *
- * `Asistente IA` esta marcado como `enConstruccion`: la ruta existe y la vista
- * explica con honestidad que la funcionalidad llega despues del MVP. Se deja
- * visible —en vez de ocultarla— porque forma parte de la propuesta de producto,
- * pero se distingue del resto para no prometer lo que aun no responde.
+ * `Asistente IA` ya no esta marcado como `enConstruccion`: desde la Fase 1
+ * del asistente conversacional (`POST /asistente/mensaje`), la vista conversa
+ * de verdad contra el catalogo real en vez de mostrar una conversacion de
+ * ejemplo.
  */
 const NAVEGACION = [
   { to: '/', etiqueta: 'Inicio', icono: Home, exacto: true },
@@ -32,7 +32,7 @@ const NAVEGACION = [
   { to: '/buscar', etiqueta: 'Buscar', icono: Search },
   { to: '/categorias', etiqueta: 'Categorias', icono: LayoutGrid },
   { to: '/recomendaciones', etiqueta: 'Recomendaciones', icono: Sparkles },
-  { to: '/asistente', etiqueta: 'Asistente IA', icono: Bot, enConstruccion: true },
+  { to: '/asistente', etiqueta: 'Asistente IA', icono: Bot },
   { to: '/configuracion', etiqueta: 'Configuracion', icono: Settings },
 ]
 
