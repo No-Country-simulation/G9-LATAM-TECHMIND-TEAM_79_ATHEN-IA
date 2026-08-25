@@ -38,10 +38,19 @@ import numpy as np
 
 logger = logging.getLogger("athenia.ml.matrix_recommender")
 
-# Calcula la ruta absoluta apuntando a la carpeta 'Data' en la raíz del proyecto
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))  # .../app/ml
-BACKEND_DIR = os.path.dirname(os.path.dirname(CURRENT_DIR))  # /app
-ROOT_DIR = BACKEND_DIR  # Raíz del runtime dentro del contenedor
+# Calcula la ruta absoluta apuntando a la carpeta 'Data' en la raíz del proyecto.
+#
+# CURRENT_DIR es .../backend/app/ml. En local (sin Docker, `npm run dev`)
+# 'Data/' vive TRES niveles arriba de aqui: ml -> app -> backend -> raiz del
+# repo. Este calculo antes subia solo dos niveles y se quedaba en
+# .../backend/, asi que el recomendador por matriz nunca encontraba el .pkl
+# ni el mapeo y quedaba "no disponible" en silencio (visible recien en
+# `GET /cursos/estado`, nunca como error). `ATHENIA_DATA_DIR` permite apuntar
+# a otra ruta -por ejemplo si un futuro Dockerfile copia 'Data/' dentro de la
+# imagen- sin tocar este calculo.
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))  # .../backend/app/ml
+_RAIZ_PROYECTO = os.path.dirname(os.path.dirname(os.path.dirname(CURRENT_DIR)))
+ROOT_DIR = os.getenv("ATHENIA_DATA_DIR", _RAIZ_PROYECTO)
 
 MODEL_PATH = os.path.join(ROOT_DIR, "Data", "matriz_similitud_cursos.pkl")
 MAPEO_PATH = os.path.join(ROOT_DIR, "Data", "mapeo_cursos.json")
