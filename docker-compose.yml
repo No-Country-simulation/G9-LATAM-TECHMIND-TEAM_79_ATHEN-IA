@@ -75,6 +75,15 @@ services:
       # OBLIGATORIO sobreescribir en el .env real de OCI (no dejar el default).
       ATHENIA_JWT_SECRET: ${ATHENIA_JWT_SECRET}
 
+      # Asistente conversacional (Gemini via SDK de OpenAI). Sin estas cuatro,
+      # Docker Compose NUNCA las pasa al contenedor aunque existan en el .env
+      # de este mismo directorio: el Asistente queda "no disponible" en OCI
+      # sin ningun error visible, sin importar que .env se use.
+      ATHENIA_OPENAI_API_KEY: ${ATHENIA_OPENAI_API_KEY}
+      ATHENIA_OPENAI_MODEL: ${ATHENIA_OPENAI_MODEL}
+      ATHENIA_OPENAI_BASE_URL: ${ATHENIA_OPENAI_BASE_URL}
+      ATHENIA_OPENAI_MAX_TOKENS: ${ATHENIA_OPENAI_MAX_TOKENS}
+
     # Puerto expuesto para Swagger y para que QA pruebe la API directamente.
     # En OCI se puede cerrar y dejar solo el 8080 del frontend.
     ports:

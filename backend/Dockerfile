@@ -77,7 +77,13 @@ ENV PYTHONUNBUFFERED=1 \
     TRANSFORMERS_OFFLINE=1 \
     ATHENIA_ENV=production \
     ATHENIA_HOST=0.0.0.0 \
-    ATHENIA_PORT=8000
+    ATHENIA_PORT=8000 \
+    # `ml/matrix_recommender.py` por defecto sube 3 niveles de carpeta desde
+    # su propio archivo para encontrar 'Data/' (asi funciona en local, fuera
+    # de Docker). Dentro de esta imagen 'Data/' se copia a /app/Data (mas
+    # abajo), un nivel mas arriba de lo que ese calculo por defecto alcanza.
+    # Esta variable lo sobreescribe para que apunte al lugar correcto aqui.
+    ATHENIA_DATA_DIR=/app
 
 WORKDIR /app
 
